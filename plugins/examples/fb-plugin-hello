@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "FounderBooster plugin: hello"
+echo "Args: $*"
+echo "FOUNDERBOOSTER_VERSION=${FOUNDERBOOSTER_VERSION:-}"
+echo "FOUNDERBOOSTER_CWD=${FOUNDERBOOSTER_CWD:-}"

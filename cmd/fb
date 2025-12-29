@@ -1,0 +1,129 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+FB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if [[ ! -f "$FB_ROOT/lib/common.sh" ]]; then
+  FB_ROOT="${FOUNDERBOOSTER_HOME:-$HOME/.founderbooster}/runtime"
+fi
+
+# shellcheck source=lib/common.sh
+source "$FB_ROOT/lib/common.sh"
+# shellcheck source=lib/config.sh
+source "$FB_ROOT/lib/config.sh"
+# shellcheck source=lib/context.sh
+source "$FB_ROOT/lib/context.sh"
+# shellcheck source=lib/ports.sh
+source "$FB_ROOT/lib/ports.sh"
+# shellcheck source=lib/cloudflare.sh
+source "$FB_ROOT/lib/cloudflare.sh"
+# shellcheck source=lib/deploy.sh
+source "$FB_ROOT/lib/deploy.sh"
+# shellcheck source=lib/doctor.sh
+source "$FB_ROOT/lib/doctor.sh"
+# shellcheck source=lib/bootstrap.sh
+source "$FB_ROOT/lib/bootstrap.sh"
+# shellcheck source=lib/version.sh
+source "$FB_ROOT/lib/version.sh"
+# shellcheck source=lib/license.sh
+source "$FB_ROOT/lib/license.sh"
+# shellcheck source=lib/list.sh
+source "$FB_ROOT/lib/list.sh"
+# shellcheck source=lib/app.sh
+source "$FB_ROOT/lib/app.sh"
+# shellcheck source=lib/plugins.sh
+source "$FB_ROOT/lib/plugins.sh"
+
+show_help() {
+  cat <<'EOF'
+Usage: fb <command> [options]
+
+Commands:
+  bootstrap        Provision Cloudflare + run tunnel + deploy app
+  doctor           Check prerequisites and optionally port usage
+  cloudflare       Cloudflare helpers
+  app              App management commands
+  list             List app/env environments
+  version          Print installed version
+  self             Self management commands
+  activate         Store license key
+  license          License status
+
+Run: fb <command> --help for command details.
+EOF
+  echo
+  print_early_access_footer
+}
+
+cmd="${1:-}"
+case "$cmd" in
+  bootstrap)
+    shift
+    cmd_bootstrap "$@"
+    ;;
+  doctor)
+    shift
+    cmd_doctor "$@"
+    ;;
+  cloudflare)
+    shift
+    cmd_cloudflare "$@"
+    ;;
+  app)
+    shift
+    cmd_app "$@"
+    ;;
+  list)
+    shift
+    cmd_list "$@"
+    ;;
+  version)
+    shift
+    cmd_version_pretty "$@"
+    ;;
+  --version)
+    shift
+    cmd_version_pretty "$@"
+    ;;
+  self)
+    shift
+    case "${1:-}" in
+      update)
+        shift
+        cmd_self_update "$@"
+        ;;
+      uninstall)
+        shift
+        cmd_self_uninstall "$@"
+        ;;
+      *)
+        die "Usage: fb self update|uninstall"
+        ;;
+    esac
+    ;;
+  activate)
+    shift
+    cmd_activate "$@"
+    ;;
+  license)
+    shift
+    case "${1:-}" in
+      status)
+        shift
+        cmd_license_status "$@"
+        ;;
+      *)
+        die "Usage: fb license status"
+        ;;
+    esac
+    ;;
+  help|-h|--help|"")
+    show_help
+    ;;
+  *)
+    if try_plugin_dispatch "$cmd" "${@:2}"; then
+      exit 0
+    fi
+    log_error "Unknown command '$cmd'. If this is a plugin, install fb-plugin-$cmd (see docs/PLUGINS.md)."
+    exit 1
+    ;;
+esac

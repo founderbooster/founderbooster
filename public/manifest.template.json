@@ -1,0 +1,14 @@
+{
+  "latest": "0.0.0",
+  "download_base_url": "https://downloads.founderbooster.com",
+  "platforms": {
+    "darwin-arm64": {
+      "tarball": "founderbooster-0.0.0-darwin-arm64.tar.gz",
+      "sha256": "founderbooster-0.0.0-darwin-arm64.tar.gz.sha256"
+    },
+    "darwin-amd64": {
+      "tarball": "founderbooster-0.0.0-darwin-amd64.tar.gz",
+      "sha256": "founderbooster-0.0.0-darwin-amd64.tar.gz.sha256"
+    }
+  }
+}
