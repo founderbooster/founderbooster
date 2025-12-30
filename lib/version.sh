@@ -60,13 +60,19 @@ cmd_self_update() {
 }
 
 cmd_self_uninstall() {
-  local install_dir="${INSTALL_DIR:-/usr/local/bin}"
-  if [[ ! -w "$install_dir" ]]; then
-    if [[ "$install_dir" == "/usr/local/bin" && -d "/opt/homebrew/bin" && -w "/opt/homebrew/bin" ]]; then
-      install_dir="/opt/homebrew/bin"
+  local bin_path=""
+  bin_path="$(command -v fb 2>/dev/null || true)"
+  if [[ -z "$bin_path" ]]; then
+    local install_dir="${INSTALL_DIR:-/usr/local/bin}"
+    if [[ ! -w "$install_dir" ]]; then
+      if [[ "$install_dir" == "/usr/local/bin" && -d "/opt/homebrew/bin" && -w "/opt/homebrew/bin" ]]; then
+        install_dir="/opt/homebrew/bin"
+      elif [[ -d "$HOME/.local/bin" ]]; then
+        install_dir="$HOME/.local/bin"
+      fi
     fi
+    bin_path="$install_dir/fb"
   fi
-  local bin_path="$install_dir/fb"
   if [[ -f "$bin_path" ]]; then
     rm -f "$bin_path"
     log_info "Removed $bin_path"

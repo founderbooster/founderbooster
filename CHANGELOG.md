@@ -7,6 +7,12 @@ This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.03] - 2025-12-29
+
+### Added
+- Linux (amd64/arm64) prebuilt tarballs and installer support.
+- Installer PATH hint for Linux when installing outside `/usr/local/bin`.
+
 ## [0.1.0] - 2025-12-29
 
 ### Added
