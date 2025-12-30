@@ -157,6 +157,7 @@ cp -R "$pkg_dir/templates/." "$runtime_dir/templates/"
 
 mkdir -p "$HOME/.founderbooster"
 cp "$pkg_dir/VERSION" "$HOME/.founderbooster/VERSION"
+printf '%s\n' "$DOWNLOAD_BASE_URL" >"$HOME/.founderbooster/download_base_url"
 
 echo "FounderBooster installed: $latest"
 echo "Binary: $INSTALL_DIR/fb"

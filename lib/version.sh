@@ -27,7 +27,11 @@ EOF
 }
 
 cmd_self_update() {
-  local base_url="${FB_DOWNLOAD_BASE_URL:-${DOWNLOAD_BASE_URL:-https://downloads.founderbooster.com}}"
+  local base_url=""
+  if [[ -f "$FB_HOME/download_base_url" ]]; then
+    base_url="$(cat "$FB_HOME/download_base_url")"
+  fi
+  base_url="${FB_DOWNLOAD_BASE_URL:-${DOWNLOAD_BASE_URL:-${base_url:-https://downloads.founderbooster.com}}}"
   require_license
   local manifest
   manifest="$(mktemp)"
