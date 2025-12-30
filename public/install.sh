@@ -9,16 +9,29 @@ NO_VERIFY="${NO_VERIFY:-}"
 OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
 ARCH="$(uname -m)"
 
-if [[ "$OS" != "darwin" ]]; then
-  echo "ERROR: Only macOS is supported right now." >&2
-  exit 1
-fi
-
-case "$ARCH" in
-  arm64) PLATFORM="darwin-arm64" ;;
-  x86_64) PLATFORM="darwin-amd64" ;;
+case "$OS" in
+  darwin)
+    case "$ARCH" in
+      arm64) PLATFORM="darwin-arm64" ;;
+      x86_64) PLATFORM="darwin-amd64" ;;
+      *)
+        echo "ERROR: Unsupported arch $ARCH for macOS." >&2
+        exit 1
+        ;;
+    esac
+    ;;
+  linux)
+    case "$ARCH" in
+      x86_64|amd64) PLATFORM="linux-amd64" ;;
+      aarch64|arm64) PLATFORM="linux-arm64" ;;
+      *)
+        echo "ERROR: Unsupported arch $ARCH for Linux." >&2
+        exit 1
+        ;;
+    esac
+    ;;
   *)
-    echo "ERROR: Unsupported arch $ARCH." >&2
+    echo "ERROR: Unsupported OS $OS (expected darwin or linux)." >&2
     exit 1
     ;;
 esac
@@ -31,6 +44,12 @@ if [[ ! -w "$INSTALL_DIR" ]]; then
   if [[ -z "${INSTALL_DIR:-}" || "$INSTALL_DIR" == "/usr/local/bin" ]]; then
     if [[ -d "/opt/homebrew/bin" && -w "/opt/homebrew/bin" ]]; then
       INSTALL_DIR="/opt/homebrew/bin"
+    elif [[ "$OS" == "linux" ]]; then
+      fallback_dir="$HOME/.local/bin"
+      mkdir -p "$fallback_dir" 2>/dev/null || true
+      if [[ -w "$fallback_dir" ]]; then
+        INSTALL_DIR="$fallback_dir"
+      fi
     fi
   fi
 fi
@@ -38,7 +57,7 @@ fi
 if [[ ! -w "$INSTALL_DIR" ]]; then
   echo "ERROR: Cannot write to $INSTALL_DIR." >&2
   echo "Re-run with sudo or choose another path:" >&2
-  echo "  INSTALL_DIR=/some/path curl -fsSL $DOWNLOAD_BASE_URL/install.sh | bash" >&2
+  echo "  curl -fsSL $DOWNLOAD_BASE_URL/install.sh | INSTALL_DIR=/some/path bash" >&2
   exit 1
 fi
 
@@ -95,9 +114,23 @@ sha_file="$tmp_dir/founderbooster.tar.gz.sha256"
 download_file "$tarball_url" "$tarball"
 download_file "$sha_url" "$sha_file"
 
+sha256_sum() {
+  local file="$1"
+  if command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 "$file" | awk '{print $1}'
+    return 0
+  fi
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$file" | awk '{print $1}'
+    return 0
+  fi
+  echo "ERROR: Missing shasum or sha256sum." >&2
+  exit 1
+}
+
 if [[ -z "$NO_VERIFY" ]]; then
   expected="$(awk '{print $1}' "$sha_file")"
-  actual="$(shasum -a 256 "$tarball" | awk '{print $1}')"
+  actual="$(sha256_sum "$tarball")"
   if [[ "$expected" != "$actual" ]]; then
     echo "ERROR: Checksum verification failed." >&2
     exit 1
@@ -124,9 +157,16 @@ cp -R "$pkg_dir/templates/." "$runtime_dir/templates/"
 
 mkdir -p "$HOME/.founderbooster"
 cp "$pkg_dir/VERSION" "$HOME/.founderbooster/VERSION"
+printf '%s\n' "$DOWNLOAD_BASE_URL" >"$HOME/.founderbooster/download_base_url"
 
 echo "FounderBooster installed: $latest"
 echo "Binary: $INSTALL_DIR/fb"
+if [[ "$OS" == "linux" ]]; then
+  if ! command -v fb >/dev/null 2>&1; then
+    echo "Note: add $INSTALL_DIR to PATH (e.g. ~/.profile or ~/.bashrc):"
+    echo "  export PATH=\"$INSTALL_DIR:\$PATH\""
+  fi
+fi
 if [[ ! -f "$HOME/.founderbooster/license.key" ]]; then
   echo "License: not activated (required for official updates/support)."
   echo "  Run: fb activate <license-key>"

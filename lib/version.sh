@@ -27,7 +27,11 @@ EOF
 }
 
 cmd_self_update() {
-  local base_url="${FB_DOWNLOAD_BASE_URL:-${DOWNLOAD_BASE_URL:-https://downloads.founderbooster.com}}"
+  local base_url=""
+  if [[ -f "$FB_HOME/download_base_url" ]]; then
+    base_url="$(cat "$FB_HOME/download_base_url")"
+  fi
+  base_url="${FB_DOWNLOAD_BASE_URL:-${DOWNLOAD_BASE_URL:-${base_url:-https://downloads.founderbooster.com}}}"
   require_license
   local manifest
   manifest="$(mktemp)"
@@ -60,13 +64,19 @@ cmd_self_update() {
 }
 
 cmd_self_uninstall() {
-  local install_dir="${INSTALL_DIR:-/usr/local/bin}"
-  if [[ ! -w "$install_dir" ]]; then
-    if [[ "$install_dir" == "/usr/local/bin" && -d "/opt/homebrew/bin" && -w "/opt/homebrew/bin" ]]; then
-      install_dir="/opt/homebrew/bin"
+  local bin_path=""
+  bin_path="$(command -v fb 2>/dev/null || true)"
+  if [[ -z "$bin_path" ]]; then
+    local install_dir="${INSTALL_DIR:-/usr/local/bin}"
+    if [[ ! -w "$install_dir" ]]; then
+      if [[ "$install_dir" == "/usr/local/bin" && -d "/opt/homebrew/bin" && -w "/opt/homebrew/bin" ]]; then
+        install_dir="/opt/homebrew/bin"
+      elif [[ -d "$HOME/.local/bin" ]]; then
+        install_dir="$HOME/.local/bin"
+      fi
     fi
+    bin_path="$install_dir/fb"
   fi
-  local bin_path="$install_dir/fb"
   if [[ -f "$bin_path" ]]; then
     rm -f "$bin_path"
     log_info "Removed $bin_path"
