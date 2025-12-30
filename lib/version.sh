@@ -84,6 +84,21 @@ cmd_self_uninstall() {
     log_warn "fb binary not found at $bin_path"
   fi
   if [[ -d "$FB_HOME" ]]; then
+    local envs=""
+    envs="$(find "$FB_HOME" -path "$FB_HOME/runtime" -prune -o -type f \( -name config.yml -o -name ports.json -o -name tunnel.token -o -name cloudflared.pid \) -print 2>/dev/null \
+      | awk -F'/' '{print $(NF-2) "/" $(NF-1)}' \
+      | sort -u)"
+    if [[ -n "$envs" ]]; then
+      log_warn "Detected app environments under $FB_HOME:"
+      while IFS= read -r env; do
+        log_warn "  $env"
+      done <<<"$envs"
+      log_warn "To clean up:"
+      log_warn "  fb app list"
+      log_warn "  fb app down --purge <app>/<env>"
+    fi
+  fi
+  if [[ -d "$FB_HOME" ]]; then
     rm -rf "$FB_HOME"
     log_info "Removed $FB_HOME"
   fi
