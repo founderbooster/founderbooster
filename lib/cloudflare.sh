@@ -48,6 +48,32 @@ cf_api_request() {
   return 1
 }
 
+cf_api_request_raw() {
+  local method="$1"
+  local path="$2"
+  local data="${3:-}"
+  local url="https://api.cloudflare.com/client/v4${path}"
+  local auth="Authorization: Bearer ${CLOUDFLARE_API_TOKEN:-}"
+  if [[ -z "${CLOUDFLARE_API_TOKEN:-}" ]]; then
+    die "CLOUDFLARE_API_TOKEN is required for Cloudflare API calls."
+  fi
+  local tmp
+  tmp="$(mktemp)"
+  local status
+  if [[ -n "$data" ]]; then
+    if ! status="$(curl -sS -X "$method" -H "$auth" -H "Content-Type: application/json" --data "$data" -o "$tmp" -w "%{http_code}" "$url")"; then
+      status="000"
+    fi
+  else
+    if ! status="$(curl -sS -X "$method" -H "$auth" -o "$tmp" -w "%{http_code}" "$url")"; then
+      status="000"
+    fi
+  fi
+  printf '%s\n' "$status"
+  cat "$tmp"
+  rm -f "$tmp"
+}
+
 cf_get_zone() {
   local domain="$1"
   local resp
@@ -130,6 +156,90 @@ cf_get_tunnel_token() {
   fi
   echo "$resp" | jq -r '.result // empty'
 }
+
+cf_get_tunnel_connections() {
+  local account_id="$1"
+  local tunnel_id="$2"
+  local resp
+  resp="$(cf_api_request GET "/accounts/$account_id/cfd_tunnel/$tunnel_id/connections")" || return 1
+  if [[ "$(echo "$resp" | jq -r '.success')" != "true" ]]; then
+    return 1
+  fi
+  echo "$resp" | jq -r '.result // []'
+}
+
+cf_get_cache_ruleset_entrypoint() {
+  local zone_id="$1"
+  local raw status body
+  raw="$(cf_api_request_raw GET "/zones/$zone_id/rulesets/phases/http_request_cache_settings/entrypoint")" || return 1
+  status="$(printf '%s\n' "$raw" | head -n1)"
+  body="$(printf '%s\n' "$raw" | tail -n +2)"
+  if [[ "$status" == "200" ]]; then
+    if [[ "$(echo "$body" | jq -r '.success')" == "true" ]]; then
+      printf '%s' "$body"
+      return 0
+    fi
+    return 1
+  fi
+  if [[ "$status" == "404" ]]; then
+    local code
+    code="$(echo "$body" | jq -r '.errors[0].code // empty')"
+    if [[ "$code" == "10003" ]]; then
+      local create
+      create="$(cf_api_request_raw POST "/zones/$zone_id/rulesets" "{\"name\":\"fb cache rules\",\"kind\":\"zone\",\"phase\":\"http_request_cache_settings\",\"rules\":[]}")" || return 1
+      local create_status
+      create_status="$(printf '%s\n' "$create" | head -n1)"
+      if [[ "$create_status" != "200" && "$create_status" != "201" ]]; then
+        return 1
+      fi
+      raw="$(cf_api_request_raw GET "/zones/$zone_id/rulesets/phases/http_request_cache_settings/entrypoint")" || return 1
+      status="$(printf '%s\n' "$raw" | head -n1)"
+      body="$(printf '%s\n' "$raw" | tail -n +2)"
+      if [[ "$status" == "200" && "$(echo "$body" | jq -r '.success')" == "true" ]]; then
+        printf '%s' "$body"
+        return 0
+      fi
+    fi
+  fi
+  log_error "Cloudflare API error body: $body"
+  return 1
+}
+
+cf_ensure_cache_bypass_host() {
+  local zone_id="$1"
+  local host="$2"
+  local resp
+  resp="$(cf_get_cache_ruleset_entrypoint "$zone_id")" || return 1
+  local ruleset_id
+  ruleset_id="$(echo "$resp" | jq -r '.result.id // empty')"
+  if [[ -z "$ruleset_id" ]]; then
+    return 1
+  fi
+  local rules
+  rules="$(echo "$resp" | jq -c '.result.rules // []')"
+  if echo "$rules" | jq -e --arg host "$host" '.[]? | select(.description=="fb no-cache " + $host or .expression=="http.host eq \"" + $host + "\"")' >/dev/null; then
+    log_info "Cloudflare cache bypass rule exists: $host"
+    return 0
+  fi
+  local new_rule
+  new_rule="$(jq -c -n --arg host "$host" '{
+    description: ("fb no-cache " + $host),
+    expression: ("http.host eq \"" + $host + "\""),
+    action: "set_cache_settings",
+    action_parameters: {cache: false}
+  }')"
+  local new_rules
+  new_rules="$(echo "$rules" | jq -c --argjson rule "$new_rule" '. + [$rule]')"
+  local data
+  data="$(jq -c -n --argjson rules "$new_rules" '{rules: $rules}')"
+  resp="$(cf_api_request PUT "/zones/$zone_id/rulesets/phases/http_request_cache_settings/entrypoint" "$data")" || return 1
+  if [[ "$(echo "$resp" | jq -r '.success')" != "true" ]]; then
+    return 1
+  fi
+  log_info "Created Cloudflare cache bypass rule for $host"
+  return 0
+}
+
 
 cf_ensure_dns_record() {
   local zone_id="$1"
@@ -216,10 +326,11 @@ Create a Cloudflare API token:
 1) Log in to Cloudflare and go to:
    https://dash.cloudflare.com/profile/api-tokens
 2) Click "Create Token" (custom token).
-3) Use these permissions:
+3) Use these permissions (Cache Rules/Rulesets only needed for --no-cache):
    - Account: Cloudflare Tunnel = Edit
    - Zone: DNS = Edit
    - Zone: Zone = Read
+   - Zone: Cache Rules / Rulesets = Edit (required for --no-cache)
 4) Scope to the account and the zone (domain) you plan to use.
 5) Create and copy the token, then export it:
    export CLOUDFLARE_API_TOKEN=your_token_here
