@@ -77,6 +77,10 @@ wait_for_http_ready() {
   local reject_404="${3:-false}"
   local tries=30
   local delay=2
+  if [[ "${FB_TEST_MODE:-}" == "true" ]]; then
+    tries=3
+    delay=0
+  fi
   local i
   for ((i=1; i<=tries; i++)); do
     local code

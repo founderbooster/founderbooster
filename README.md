@@ -78,6 +78,13 @@ export CLOUDFLARE_API_TOKEN=...
 fb bootstrap --domain <your-domain> --site-port 3000
 ```
 
+## Tests
+
+Run unit tests:
+```bash
+./scripts/test-unit.sh
+```
+
 ## How it works
 
 FounderBooster creates or reuses a Cloudflare tunnel, updates DNS + SSL, and stores local state per app/env.

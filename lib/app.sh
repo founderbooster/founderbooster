@@ -258,6 +258,7 @@ cmd_app_status() {
           die "Usage: fb app status [options] [app[/env]]"
         fi
         env_name="$2"
+        env_override="true"
         shift 2
         ;;
       --all)
