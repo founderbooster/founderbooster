@@ -11,11 +11,11 @@ e2e_setup_home
 
 DEFAULT_AUTO_APP_DIR="$ROOT_DIR/tests/e2e/apps/directus-demo"
 APP_DIR="${E2E_AUTO_APP_DIR:-$DEFAULT_AUTO_APP_DIR}"
-if [[ ! -f "$APP_DIR/docker-compose.yml" ]]; then
+if [[ ! -f "$APP_DIR/docker-compose.yml" && ! -f "$APP_DIR/docker-compose.yaml" ]]; then
   if [[ -n "${E2E_AUTO_APP_DIR:-}" ]]; then
-    e2e_die "Auto app dir missing docker-compose.yml: $APP_DIR"
+    e2e_die "Auto app dir missing docker-compose.yml or docker-compose.yaml: $APP_DIR"
   fi
-  e2e_die "Default auto app dir missing docker-compose.yml: $APP_DIR (set E2E_AUTO_APP_DIR to override)"
+  e2e_die "Default auto app dir missing docker-compose.yml or docker-compose.yaml: $APP_DIR (set E2E_AUTO_APP_DIR to override)"
 fi
 
 cd "$APP_DIR"

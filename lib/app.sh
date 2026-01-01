@@ -62,7 +62,7 @@ stop_app_stack() {
   local app="$1"
   local env="$2"
   local workdir="${3:-$PWD}"
-  if [[ -f "$workdir/docker-compose.yml" ]]; then
+  if [[ -f "$workdir/docker-compose.yml" || -f "$workdir/docker-compose.yaml" ]]; then
     local project="${COMPOSE_PROJECT_NAME:-}"
     if [[ -z "$project" ]]; then
       project="$(fb_compose_project_name "$app" "$env")"
@@ -169,7 +169,7 @@ cmd_app_down() {
     fi
   fi
   if [[ -z "$app_name" ]]; then
-    if [[ -f "$PWD/docker-compose.yml" ]]; then
+    if [[ -f "$PWD/docker-compose.yml" || -f "$PWD/docker-compose.yaml" ]]; then
       app_name="$(safe_basename "$PWD")"
       repo_hint="true"
     fi
@@ -206,6 +206,9 @@ cmd_app_down() {
   if [[ -f "$compose_dir_file" ]]; then
     compose_dir="$(cat "$compose_dir_file")"
   fi
+  if [[ -z "$compose_dir" ]] && app_repo_matches "$app_name"; then
+    compose_dir="$PWD"
+  fi
   local stopped="false"
   if app_repo_matches "$app_name"; then
     if stop_app_stack "$app_name" "$env_name"; then
@@ -222,9 +225,9 @@ cmd_app_down() {
       log_warn "Current directory does not match app '$app_name'; skipping app stop."
       log_warn "Run from the app repo or pass --tunnel-only."
     elif [[ -n "$compose_dir" ]]; then
-      log_warn "No docker-compose.yml found in $compose_dir."
+      log_warn "No docker-compose.yml or docker-compose.yaml found in $compose_dir."
     else
-      log_warn "No docker-compose.yml found."
+      log_warn "No docker-compose.yml or docker-compose.yaml found."
     fi
   fi
 

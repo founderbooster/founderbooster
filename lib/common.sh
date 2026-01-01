@@ -52,6 +52,18 @@ safe_basename() {
   basename "$path"
 }
 
+fb_compose_file() {
+  if [[ -f "$PWD/docker-compose.yml" ]]; then
+    echo "$PWD/docker-compose.yml"
+    return 0
+  fi
+  if [[ -f "$PWD/docker-compose.yaml" ]]; then
+    echo "$PWD/docker-compose.yaml"
+    return 0
+  fi
+  return 1
+}
+
 fb_compose_project_name() {
   local app="${1:-}"
   local env="${2:-}"

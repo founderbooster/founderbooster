@@ -3,7 +3,7 @@ set -euo pipefail
 
 run_docker_compose() {
   local env="$1"
-  if [[ -f "$PWD/docker-compose.yml" ]]; then
+  if fb_compose_file >/dev/null 2>&1; then
     local project="${COMPOSE_PROJECT_NAME:-}"
     if [[ -z "$project" ]]; then
       project="$(fb_compose_project_name "${APP_NAME:-}" "$env")"
@@ -28,7 +28,7 @@ deploy_app() {
   if run_docker_compose "$env"; then
     return 0
   fi
-  log_warn "No docker-compose.yml found."
+  log_warn "No docker-compose.yml or docker-compose.yaml found."
   log_warn "Deploy manually."
   return 1
 }

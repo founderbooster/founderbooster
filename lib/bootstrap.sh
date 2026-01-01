@@ -274,8 +274,8 @@ cmd_bootstrap() {
   log_info "Context: app=$APP_NAME env=$ENV_NAME domain=$DOMAIN_NAME"
 
   if [[ "$manual_mode" != "true" ]]; then
-    if [[ ! -f "$PWD/docker-compose.yml" ]]; then
-      log_error "Auto mode expects docker-compose.yml in the current directory."
+    if ! fb_compose_file >/dev/null 2>&1; then
+      log_error "Auto mode expects docker-compose.yml or docker-compose.yaml in the current directory."
       log_error "If your app is already running, use Manual mode with --site-port (and --api-port)."
       exit 1
     fi
