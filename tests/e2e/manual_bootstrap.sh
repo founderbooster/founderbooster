@@ -3,14 +3,19 @@ set -euo pipefail
 
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/_helpers.sh"
 
-e2e_require_env CLOUDFLARE_API_TOKEN E2E_DOMAIN E2E_MANUAL_APP_DIR
+e2e_require_env CLOUDFLARE_API_TOKEN
+e2e_require_domain
 e2e_require_cmd cloudflared curl
 
 e2e_setup_home
 
-APP_DIR="$E2E_MANUAL_APP_DIR"
+DEFAULT_MANUAL_APP_DIR="$ROOT_DIR/tests/e2e/apps/port-first-demo"
+APP_DIR="${E2E_MANUAL_APP_DIR:-$DEFAULT_MANUAL_APP_DIR}"
 if [[ ! -d "$APP_DIR" ]]; then
-  e2e_die "Manual app dir missing: $APP_DIR"
+  if [[ -n "${E2E_MANUAL_APP_DIR:-}" ]]; then
+    e2e_die "Manual app dir missing: $APP_DIR"
+  fi
+  e2e_die "Default manual app dir missing: $APP_DIR (set E2E_MANUAL_APP_DIR to override)"
 fi
 
 cd "$APP_DIR"
@@ -31,10 +36,45 @@ if [[ -z "$start_cmd" ]]; then
 fi
 
 echo "INFO: starting local server"
-bash -c "$start_cmd" >/dev/null 2>&1 &
-server_pid=$!
+server_pid=""
+server_kill_mode="pid"
+if command -v setsid >/dev/null 2>&1; then
+  setsid bash -c "exec $start_cmd" >/dev/null 2>&1 &
+  server_pid=$!
+  server_kill_mode="pgid"
+else
+  bash -c "exec $start_cmd" >/dev/null 2>&1 &
+  server_pid=$!
+fi
 
-trap 'kill "$server_pid" >/dev/null 2>&1 || true' EXIT
+stop_local_server() {
+  if [[ -z "${server_pid:-}" ]]; then
+    return 0
+  fi
+  if [[ "$server_kill_mode" == "pgid" ]]; then
+    kill -TERM -- "-$server_pid" >/dev/null 2>&1 || true
+    wait "$server_pid" 2>/dev/null || true
+  else
+    kill "$server_pid" >/dev/null 2>&1 || true
+    wait "$server_pid" 2>/dev/null || true
+  fi
+  if [[ -n "${E2E_MANUAL_PORT:-}" ]] && command -v lsof >/dev/null 2>&1; then
+    local lingering_pids=""
+    lingering_pids="$(lsof -ti tcp:"$E2E_MANUAL_PORT" 2>/dev/null || true)"
+    if [[ -n "$lingering_pids" ]]; then
+      kill -TERM $lingering_pids >/dev/null 2>&1 || true
+      sleep 1
+      lingering_pids="$(lsof -ti tcp:"$E2E_MANUAL_PORT" 2>/dev/null || true)"
+      if [[ -n "$lingering_pids" ]]; then
+        kill -KILL $lingering_pids >/dev/null 2>&1 || true
+      fi
+    fi
+  fi
+}
+
+if e2e_should_teardown; then
+  trap stop_local_server EXIT
+fi
 
 e2e_wait_for_local_port "$port"
 
@@ -57,13 +97,21 @@ if ! grep -q "hostname: $domain" "$config_path"; then
   e2e_die "Missing hostname $domain in $config_path"
 fi
 
-e2e_wait_for_url "https://$domain" "Cloudflare URL"
+e2e_wait_for_cloudflare_url "https://$domain" "Cloudflare URL"
+e2e_print_url_snippet "https://$domain" "Cloudflare URL"
 
-echo "INFO: stopping local server"
-kill "$server_pid" >/dev/null 2>&1 || true
-wait "$server_pid" 2>/dev/null || true
+if e2e_should_teardown; then
+  echo "INFO: stopping local server"
+  stop_local_server
+else
+  echo "INFO: skipping local server shutdown (E2E_SKIP_TEARDOWN=1)"
+fi
 
-echo "INFO: fb app down --purge"
-e2e_fb app down "$(basename "$APP_DIR")/$env_name" --purge
+if e2e_should_teardown; then
+  echo "INFO: fb app down --purge"
+  e2e_fb app down "$(basename "$APP_DIR")/$env_name" --purge
+else
+  echo "INFO: skipping teardown (E2E_SKIP_TEARDOWN=1)"
+fi
 
 echo "manual_bootstrap.sh OK"

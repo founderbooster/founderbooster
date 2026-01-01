@@ -12,11 +12,12 @@ FB_INTEGRATION=1 ./scripts/test-integration.sh
 
 Run E2E tests (opt-in, requires Cloudflare + Docker):
 ```bash
+export CLOUDFLARE_API_TOKEN=...
+
 FB_E2E=1 \
-  CLOUDFLARE_API_TOKEN=... \
-  E2E_DOMAIN=e2e.example.com \
-  E2E_AUTO_APP_DIR=/path/to/directus-demo \
-  E2E_MANUAL_APP_DIR=/path/to/port-first-demo \
+  CLOUDFLARE_API_TOKEN=$CLOUDFLARE_API_TOKEN \
+  E2E_AUTO_DOMAIN=e2e-auto.founderbooster.com \
+  E2E_MANUAL_DOMAIN=e2e-manual.founderbooster.com \
   E2E_MANUAL_START_CMD="./scripts/run-local.sh" \
   ./scripts/test-e2e.sh
 ```

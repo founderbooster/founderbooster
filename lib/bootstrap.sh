@@ -361,6 +361,7 @@ cmd_bootstrap() {
   else
     log_info "Cloudflare tunnel exists: $tunnel_name"
   fi
+  cloudflare_write_tunnel_name "$APP_NAME" "$ENV_NAME" "$tunnel_name"
 
   local existing_conn_count
   existing_conn_count="$(cf_get_tunnel_connections "$CF_ACCOUNT_ID" "$tunnel_id" | jq -r 'length' 2>/dev/null || true)"

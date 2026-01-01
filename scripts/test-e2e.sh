@@ -28,6 +28,9 @@ log() { printf '%b\n' "$*"; }
 log "🧪 ${COLOR_BOLD}E2E Tests${COLOR_RESET}"
 log "Location: $ROOT_DIR/tests/e2e"
 log "Keep temp output: KEEP_TMP=1 FB_E2E=1 ./scripts/test-e2e.sh"
+log "Skip teardown: E2E_SKIP_TEARDOWN=1 FB_E2E=1 ./scripts/test-e2e.sh"
+log "Domain vars: set E2E_DOMAIN or per-test E2E_AUTO_DOMAIN/E2E_MANUAL_DOMAIN"
+log "Default apps: tests/e2e/apps/directus-demo (auto), tests/e2e/apps/port-first-demo (manual)"
 log ""
 
 for test_file in "$ROOT_DIR/tests/e2e/"*.sh; do
