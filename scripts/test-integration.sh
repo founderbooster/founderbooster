@@ -26,7 +26,7 @@ fi
 log() { printf '%b\n' "$*"; }
 
 log "🧪 ${COLOR_BOLD}Integration Tests${COLOR_RESET}"
-log "Location: $ROOT_DIR/tests/integration"
+log "Location: tests/integration"
 log "Keep temp output: KEEP_TMP=1 FB_INTEGRATION=1 ./scripts/test-integration.sh"
 log ""
 

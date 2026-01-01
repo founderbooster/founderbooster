@@ -23,7 +23,7 @@ fi
 log() { printf '%b\n' "$*"; }
 
 log "🧪 ${COLOR_BOLD}Unit Tests${COLOR_RESET}"
-log "Location: $ROOT_DIR/tests/unit"
+log "Location: tests/unit"
 log ""
 
 for test_file in "$ROOT_DIR/tests/unit/"*.sh; do
