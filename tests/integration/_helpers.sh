@@ -216,4 +216,3 @@ source_libs() {
   # shellcheck source=lib/app.sh
   source "$ROOT_DIR/lib/app.sh"
 }
-

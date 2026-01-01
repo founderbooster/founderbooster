@@ -24,8 +24,9 @@ env_name="${E2E_ENV:-dev}"
 hosts_list="${E2E_HOSTS:-root}"
 domain="${E2E_AUTO_DOMAIN:-$E2E_DOMAIN}"
 
-echo "INFO: fb app list"
-e2e_fb app list || true
+echo "INFO: fb app list (pre-bootstrap)"
+list_out="$(e2e_fb app list || true)"
+printf '%s\n' "$list_out" | sed 's/^/  /'
 
 echo "INFO: fb bootstrap auto mode"
 e2e_fb bootstrap --env "$env_name" --domain "$domain" --hosts "$hosts_list"
@@ -45,6 +46,17 @@ fi
 
 e2e_wait_for_cloudflare_url "https://$domain" "Cloudflare URL"
 e2e_print_url_snippet "https://$domain" "Cloudflare URL"
+
+echo "INFO: fb app list (post-bootstrap)"
+list_out="$(e2e_fb app list || true)"
+printf '%s\n' "$list_out" | sed 's/^/  /'
+expected_compose="$APP_DIR"
+if [[ -n "${HOME:-}" && "$expected_compose" == "$HOME/"* ]]; then
+  expected_compose="~/${expected_compose#$HOME/}"
+fi
+if [[ "$list_out" != *"compose=$expected_compose"* ]]; then
+  e2e_die "Expected compose dir not shown in app list: compose=$expected_compose"
+fi
 
 if e2e_should_teardown; then
   echo "INFO: fb app down --purge"

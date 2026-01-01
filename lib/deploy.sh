@@ -15,6 +15,9 @@ run_docker_compose() {
       log_info "Running docker compose up -d"
       docker compose up -d
     fi
+    if [[ -n "${APP_NAME:-}" ]]; then
+      cloudflare_write_compose_dir "$APP_NAME" "$env" "$PWD"
+    fi
     return 0
   fi
   return 1

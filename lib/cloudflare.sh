@@ -300,6 +300,12 @@ cloudflare_tunnel_name_path() {
   echo "$FB_HOME/$app/$env/tunnel.name"
 }
 
+cloudflare_compose_dir_path() {
+  local app="$1"
+  local env="$2"
+  echo "$FB_HOME/$app/$env/compose.dir"
+}
+
 cloudflare_pid_path() {
   local app="$1"
   local env="$2"
@@ -399,6 +405,16 @@ cloudflare_write_tunnel_name() {
   out="$(cloudflare_tunnel_name_path "$app" "$env")"
   ensure_dir "$(dirname "$out")"
   printf '%s\n' "$tunnel_name" >"$out"
+}
+
+cloudflare_write_compose_dir() {
+  local app="$1"
+  local env="$2"
+  local compose_dir="$3"
+  local out
+  out="$(cloudflare_compose_dir_path "$app" "$env")"
+  ensure_dir "$(dirname "$out")"
+  printf '%s\n' "$compose_dir" >"$out"
 }
 
 cloudflare_tunnel_running() {

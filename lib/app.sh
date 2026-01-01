@@ -61,7 +61,8 @@ app_repo_matches() {
 stop_app_stack() {
   local app="$1"
   local env="$2"
-  if [[ -f "$PWD/docker-compose.yml" ]]; then
+  local workdir="${3:-$PWD}"
+  if [[ -f "$workdir/docker-compose.yml" ]]; then
     local project="${COMPOSE_PROJECT_NAME:-}"
     if [[ -z "$project" ]]; then
       project="$(fb_compose_project_name "$app" "$env")"
@@ -69,7 +70,7 @@ stop_app_stack() {
     if [[ -n "$project" ]]; then
       log_info "Running docker compose down (project: $project)"
       local output
-      if output="$(COMPOSE_PROJECT_NAME="$project" docker compose down 2>&1)"; then
+      if output="$(cd "$workdir" && COMPOSE_PROJECT_NAME="$project" docker compose down 2>&1)"; then
         if [[ "$output" == *"No resource found"* ]]; then
           log_info "Docker compose: no resources to stop."
           echo "$output" | sed '/No resource found/d'
@@ -84,7 +85,7 @@ stop_app_stack() {
     fi
     log_info "Running docker compose down"
     local output
-    if output="$(docker compose down 2>&1)"; then
+    if output="$(cd "$workdir" && docker compose down 2>&1)"; then
       if [[ "$output" == *"No resource found"* ]]; then
         log_info "Docker compose: no resources to stop."
         echo "$output" | sed '/No resource found/d'
@@ -199,15 +200,32 @@ cmd_app_down() {
   if is_true "$tunnel_only"; then
     return 0
   fi
-
-  if ! app_repo_matches "$app_name"; then
-    log_warn "Current directory does not match app '$app_name'; skipping app stop."
-    log_warn "Run from the app repo or pass --tunnel-only."
-    return 0
+  local compose_dir_file
+  compose_dir_file="$(cloudflare_compose_dir_path "$app_name" "$env_name")"
+  local compose_dir=""
+  if [[ -f "$compose_dir_file" ]]; then
+    compose_dir="$(cat "$compose_dir_file")"
   fi
-
-  if ! stop_app_stack "$app_name" "$env_name"; then
-    log_warn "No docker-compose.yml found."
+  local stopped="false"
+  if app_repo_matches "$app_name"; then
+    if stop_app_stack "$app_name" "$env_name"; then
+      stopped="true"
+    fi
+  fi
+  if [[ "$stopped" != "true" && -n "$compose_dir" ]]; then
+    if stop_app_stack "$app_name" "$env_name" "$compose_dir"; then
+      stopped="true"
+    fi
+  fi
+  if [[ "$stopped" != "true" ]]; then
+    if ! app_repo_matches "$app_name"; then
+      log_warn "Current directory does not match app '$app_name'; skipping app stop."
+      log_warn "Run from the app repo or pass --tunnel-only."
+    elif [[ -n "$compose_dir" ]]; then
+      log_warn "No docker-compose.yml found in $compose_dir."
+    else
+      log_warn "No docker-compose.yml found."
+    fi
   fi
 
   log_info "✅ Stopped: $app_name/$env_name"
