@@ -35,6 +35,8 @@ source "$ROOT_DIR/lib/app.sh"
 # Override FB_HOME after sourcing common.sh
 export FB_HOME="$TMP_DIR/fb-home"
 mkdir -p "$FB_HOME"
+export HOME="$TMP_DIR/home"
+mkdir -p "$HOME"
 
 # Stubs
 fb_config_init() { CONFIG_FILE=""; }
@@ -45,6 +47,7 @@ docker_published_ports_for_app() { return 1; }
 cloudflare_config_path() { echo "$FB_HOME/$1/$2/config.yml"; }
 cloudflare_pid_path() { echo "$FB_HOME/$1/$2/cloudflared.pid"; }
 cloudflare_token_path() { echo "$FB_HOME/$1/$2/tunnel.token"; }
+cloudflare_compose_dir_path() { echo "$FB_HOME/$1/$2/compose.dir"; }
 cloudflare_stop_tunnel() { echo "stopped $1/$2"; }
 cloudflare_tunnel_running() { [[ -f "$1" ]]; }
 app_repo_matches() { return 0; }
@@ -58,10 +61,12 @@ echo "tunnel: 1234" >"$state_dir/config.yml"
 echo "hostname: example.com" >>"$state_dir/config.yml"
 printf '{"site":8055,"api":8055}\n' >"$state_dir/ports.json"
 echo "4321" >"$state_dir/cloudflared.pid"
+mkdir -p "$HOME/projects/demo"
+printf '%s\n' "$HOME/projects/demo" >"$state_dir/compose.dir"
 
 # fb app list
 list_out="$(cmd_list 2>&1)"
-assert_contains "$list_out" "$app/$env - type=app tunnel=running pid=4321"
+assert_contains "$list_out" "$app/$env - type=app tunnel=running pid=4321 compose=~/projects/demo"
 
 # fb app status
 status_out="$(cmd_app_status --app "$app" --env "$env" 2>&1)"

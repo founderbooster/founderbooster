@@ -78,8 +78,9 @@ fi
 
 e2e_wait_for_local_port "$port"
 
-echo "INFO: fb app list"
-e2e_fb app list || true
+echo "INFO: fb app list (pre-bootstrap)"
+list_out="$(e2e_fb app list || true)"
+printf '%s\n' "$list_out" | sed 's/^/  /'
 
 echo "INFO: fb bootstrap manual mode"
 e2e_fb bootstrap --env "$env_name" --domain "$domain" --hosts "$hosts_list" --site-port "$port"
@@ -99,6 +100,10 @@ fi
 
 e2e_wait_for_cloudflare_url "https://$domain" "Cloudflare URL"
 e2e_print_url_snippet "https://$domain" "Cloudflare URL"
+
+echo "INFO: fb app list (post-bootstrap)"
+list_out="$(e2e_fb app list || true)"
+printf '%s\n' "$list_out" | sed 's/^/  /'
 
 if e2e_should_teardown; then
   echo "INFO: stopping local server"

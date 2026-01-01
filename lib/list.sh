@@ -50,7 +50,20 @@ cmd_list() {
       tunnel_status="running"
       pid="$(cat "$pid_file" 2>/dev/null || echo "-")"
     fi
-    echo "$app/$env - type=app tunnel=$tunnel_status pid=$pid"
+    local compose_dir_file
+    compose_dir_file="$(cloudflare_compose_dir_path "$app" "$env")"
+    local compose_dir=""
+    if [[ -f "$compose_dir_file" ]]; then
+      compose_dir="$(cat "$compose_dir_file")"
+    fi
+    local compose_display="-"
+    if [[ -n "$compose_dir" ]]; then
+      compose_display="$compose_dir"
+      if [[ -n "${HOME:-}" && "$compose_display" == "$HOME/"* ]]; then
+        compose_display="~/${compose_display#$HOME/}"
+      fi
+    fi
+    echo "$app/$env - type=app tunnel=$tunnel_status pid=$pid compose=$compose_display"
   done <<<"$configs"
 
   echo "Tip: fb app down <app>/<env> (use --purge to remove local state)"

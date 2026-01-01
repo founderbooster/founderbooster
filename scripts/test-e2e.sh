@@ -24,6 +24,10 @@ else
 fi
 
 log() { printf '%b\n' "$*"; }
+has_shell_error() {
+  local text="$1"
+  printf '%s\n' "$text" | grep -Eq '(^|/).*: line [0-9]+:'
+}
 
 log "🧪 ${COLOR_BOLD}E2E Tests${COLOR_RESET}"
 log "Location: tests/e2e"
@@ -45,11 +49,19 @@ for test_file in "$ROOT_DIR/tests/e2e/"*.sh; do
   TOTAL=$((TOTAL + 1))
   log "🔹 ${COLOR_BOLD}${test_name}${COLOR_RESET}"
   if output="$(bash "$test_file" 2>&1)"; then
-    PASSED=$((PASSED + 1))
-    if [[ -n "$output" ]]; then
-      printf '%s\n' "$output" | sed 's/^/  /'
+    if has_shell_error "$output"; then
+      FAILED=1
+      if [[ -n "$output" ]]; then
+        printf '%s\n' "$output" | sed 's/^/  /'
+      fi
+      log "  ${COLOR_RED}FAIL${COLOR_RESET} ❌"
+    else
+      PASSED=$((PASSED + 1))
+      if [[ -n "$output" ]]; then
+        printf '%s\n' "$output" | sed 's/^/  /'
+      fi
+      log "  ${COLOR_GREEN}PASS${COLOR_RESET} ✅"
     fi
-    log "  ${COLOR_GREEN}PASS${COLOR_RESET} ✅"
   else
     FAILED=1
     if [[ -n "$output" ]]; then
