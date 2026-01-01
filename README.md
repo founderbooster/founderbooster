@@ -85,6 +85,11 @@ Run unit tests:
 ./scripts/test-unit.sh
 ```
 
+Run integration tests (opt-in):
+```bash
+FB_INTEGRATION=1 ./scripts/test-integration.sh
+```
+
 ## How it works
 
 FounderBooster creates or reuses a Cloudflare tunnel, updates DNS + SSL, and stores local state per app/env.

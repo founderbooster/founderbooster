@@ -148,6 +148,9 @@ machine_suffix() {
 
 cmd_bootstrap() {
   FB_BOOTSTRAP="true"
+  if [[ "${FB_TRACE:-}" == "true" ]]; then
+    set -x
+  fi
   local user_ports="false"
   FB_USER_PORTS="false"
   local app_name=""
