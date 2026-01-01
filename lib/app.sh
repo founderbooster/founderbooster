@@ -216,9 +216,18 @@ cmd_app_down() {
     local state_dir="$FB_HOME/$app_name/$env_name"
     local config_path
     config_path="$(cloudflare_config_path "$app_name" "$env_name")"
+    local tunnel_name_file
+    tunnel_name_file="$(cloudflare_tunnel_name_path "$app_name" "$env_name")"
     local hostnames=""
     if [[ -f "$config_path" ]]; then
       hostnames="$(awk -F': ' '/hostname:/{print $2}' "$config_path" | paste -sd, -)"
+    fi
+    local tunnel_name=""
+    if [[ -f "$tunnel_name_file" ]]; then
+      tunnel_name="$(cat "$tunnel_name_file")"
+    fi
+    if [[ -z "$tunnel_name" ]]; then
+      tunnel_name="${app_name}-${env_name}"
     fi
     if [[ -d "$state_dir" ]]; then
       rm -rf "$state_dir"
@@ -226,7 +235,6 @@ cmd_app_down() {
     else
       log_info "No local state found to remove: $state_dir."
     fi
-    local tunnel_name="${app_name}-${env_name}"
     log_info "Cloudflare resources left unchanged."
     if [[ -n "$hostnames" ]]; then
       log_info "To remove them manually: delete tunnel \"$tunnel_name\" and DNS records for $hostnames."
@@ -258,6 +266,7 @@ cmd_app_status() {
           die "Usage: fb app status [options] [app[/env]]"
         fi
         env_name="$2"
+        env_override="true"
         shift 2
         ;;
       --all)

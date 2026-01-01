@@ -294,6 +294,12 @@ cloudflare_config_path() {
   echo "$FB_HOME/$app/$env/config.yml"
 }
 
+cloudflare_tunnel_name_path() {
+  local app="$1"
+  local env="$2"
+  echo "$FB_HOME/$app/$env/tunnel.name"
+}
+
 cloudflare_pid_path() {
   local app="$1"
   local env="$2"
@@ -383,6 +389,16 @@ render_cloudflared_config() {
     echo "  - service: http_status:404"
   } >"$out"
   log_info "Rendered cloudflared config: $out"
+}
+
+cloudflare_write_tunnel_name() {
+  local app="$1"
+  local env="$2"
+  local tunnel_name="$3"
+  local out
+  out="$(cloudflare_tunnel_name_path "$app" "$env")"
+  ensure_dir "$(dirname "$out")"
+  printf '%s\n' "$tunnel_name" >"$out"
 }
 
 cloudflare_tunnel_running() {

@@ -44,8 +44,8 @@ read_ports_json() {
   local file="$1"
   [[ -f "$file" ]] || return 1
   local site api
-  site="$(awk -F'[:,}]' '/"site"/{gsub(/[^0-9]/,"",$2); print $2}' "$file")"
-  api="$(awk -F'[:,}]' '/"api"/{gsub(/[^0-9]/,"",$2); print $2}' "$file")"
+  site="$(sed -n 's/.*"site":\([0-9][0-9]*\).*/\1/p' "$file")"
+  api="$(sed -n 's/.*"api":\([0-9][0-9]*\).*/\1/p' "$file")"
   if [[ -n "$site" && -n "$api" ]]; then
     echo "$site $api"
     return 0

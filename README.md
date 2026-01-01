@@ -58,25 +58,11 @@ fb bootstrap --domain <your-domain> --site-port <port>
 
 ## Try a Demo (Optional)
 
-Auto mode demo (Docker-based):
-```bash
-git clone https://github.com/founderbooster/directus-demo.git
-cd directus-demo
-export CLOUDFLARE_API_TOKEN=...
-fb bootstrap --domain <your-domain> --env dev
-```
+See [DEMO.md](docs/DEMO.md).
 
-Manual mode demo (known ports):
-```bash
-git clone https://github.com/founderbooster/port-first-demo.git
-cd port-first-demo
+## Tests
 
-chmod +x scripts/run-local.sh
-./scripts/run-local.sh
-
-export CLOUDFLARE_API_TOKEN=...
-fb bootstrap --domain <your-domain> --site-port 3000
-```
+See [TESTING.md](docs/TESTING.md).
 
 ## How it works
 
