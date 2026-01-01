@@ -58,11 +58,11 @@ fb bootstrap --domain <your-domain> --site-port <port>
 
 ## Try a Demo (Optional)
 
-See [DEMO.md](DEMO.md).
+See [DEMO.md](docs/DEMO.md).
 
 ## Tests
 
-See [TESTING.md](TESTING.md).
+See [TESTING.md](docs/TESTING.md).
 
 ## How it works
 
