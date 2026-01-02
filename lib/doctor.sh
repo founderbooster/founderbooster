@@ -9,12 +9,12 @@ Options:
   --ports            Show resolved ports and check usage
   --dns              Show DNS records for the resolved domain
   --install          Verify installed binary and version file
-  --app NAME         Override app name
-  --env ENV          Environment (dev|staging|prod)
-  --domain DOMAIN    Override domain
-  --site-port PORT   Override site port
-  --api-port PORT    Override api port
-  --hosts LIST       Comma list: root,api,www
+  -a, --app NAME         Override app name
+  -e, --env ENV          Environment (dev|staging|prod)
+  -d, --domain DOMAIN    Override domain
+  -s, --site-port PORT   Override site port
+  -i, --api-port PORT    Override api port
+  -H, --hosts LIST       Comma list: root,api,www
 EOF
 }
 
@@ -43,27 +43,27 @@ cmd_doctor() {
         check_install="true"
         shift
         ;;
-      --app)
+      -a|--app)
         app_name="$2"
         shift 2
         ;;
-      --env)
+      -e|--env)
         env_name="$2"
         shift 2
         ;;
-      --domain)
+      -d|--domain)
         domain="$2"
         shift 2
         ;;
-      --site-port)
+      -s|--site-port)
         site_port="$2"
         shift 2
         ;;
-      --api-port)
+      -i|--api-port)
         api_port="$2"
         shift 2
         ;;
-      --hosts)
+      -H|--hosts)
         hosts_list="$2"
         shift 2
         ;;
@@ -181,7 +181,7 @@ cmd_doctor() {
         fi
         log_warn "Docker publishes ports for containers matching '$app_name' that do not include the resolved ports."
         log_info "Ports published by Docker: $docker_ports_list"
-        log_info "If your app listens on one of these, rerun: fb bootstrap --site-port $rec_site --api-port $rec_api"
+        log_info "If your app listens on one of these, rerun: fb bootstrap -s $rec_site -i $rec_api (or --site-port/--api-port)"
       fi
     fi
   fi

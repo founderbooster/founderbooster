@@ -66,7 +66,7 @@ printf '%s\n' "$HOME/projects/demo" >"$state_dir/compose.dir"
 
 # fb app list
 list_out="$(cmd_list 2>&1)"
-assert_contains "$list_out" "$app/$env - type=app tunnel=running pid=4321 compose=~/projects/demo"
+assert_contains "$list_out" "- $app/$env - type=app tunnel=running pid=4321 compose=~/projects/demo"
 
 # fb app status
 status_out="$(cmd_app_status --app "$app" --env "$env" 2>&1)"

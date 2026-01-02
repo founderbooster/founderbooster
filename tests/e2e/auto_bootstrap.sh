@@ -21,7 +21,7 @@ fi
 cd "$APP_DIR"
 
 env_name="${E2E_ENV:-dev}"
-hosts_list="${E2E_HOSTS:-root}"
+hosts_list="${E2E_HOSTS:-}"
 domain="${E2E_AUTO_DOMAIN:-$E2E_DOMAIN}"
 
 echo "INFO: fb app list (pre-bootstrap)"
@@ -29,7 +29,11 @@ list_out="$(e2e_fb app list || true)"
 printf '%s\n' "$list_out" | sed 's/^/  /'
 
 echo "INFO: fb bootstrap auto mode"
-e2e_fb bootstrap --env "$env_name" --domain "$domain" --hosts "$hosts_list"
+bootstrap_args=(--env "$env_name" --domain "$domain")
+if [[ -n "$hosts_list" ]]; then
+  bootstrap_args+=(--hosts "$hosts_list")
+fi
+e2e_fb bootstrap "${bootstrap_args[@]}"
 
 config_path="$FB_HOME/$(basename "$APP_DIR")/$env_name/config.yml"
 if [[ ! -f "$config_path" ]]; then

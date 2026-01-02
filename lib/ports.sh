@@ -169,7 +169,7 @@ resolve_ports() {
 
   if [[ -n "$site_flag" || -n "$api_flag" ]]; then
     if [[ -z "$site_flag" ]]; then
-      die "--site-port is required when overriding ports."
+      die "-s (or --site-port) is required when overriding ports."
     fi
     if [[ -z "$api_flag" ]]; then
       api_flag="$site_flag"

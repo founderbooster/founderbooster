@@ -32,6 +32,7 @@ cf_ensure_dns_record() { log_info "DNS record up-to-date: $2"; }
 cf_get_tunnel_token() { echo "token-123"; }
 
 cases=(
+  "dev|example.com||dev.example.com|dev.example.com||"
   "dev|subdomain.example.com|root|subdomain.example.com|subdomain.example.com||"
   "staging|example.com|root,api|staging.example.com|staging.example.com|api-staging.example.com|"
   "prod|example.com|api,www|example.com||api.example.com|www.example.com"
@@ -40,7 +41,11 @@ cases=(
 for case in "${cases[@]}"; do
   IFS='|' read -r env domain hosts expected_domain expect_root expect_api expect_www <<<"$case"
   output_file="$TMP_DIR/output-${env}.txt"
-  cmd_bootstrap --domain "$domain" --env "$env" --hosts "$hosts" >"$output_file" 2>&1 || true
+  if [[ -n "$hosts" ]]; then
+    cmd_bootstrap -d "$domain" -e "$env" -H "$hosts" >"$output_file" 2>&1 || true
+  else
+    cmd_bootstrap -d "$domain" -e "$env" >"$output_file" 2>&1 || true
+  fi
   output="$(cat "$output_file")"
   OUTPUT_DUMP="$output"
   echo "Output captured at: $output_file"

@@ -6,12 +6,12 @@ bootstrap_help() {
 Usage: fb bootstrap [options]
 
 Options:
-  --app NAME         Override app name
-  --env ENV          Environment (dev|staging|prod)
-  --domain DOMAIN    Override domain
-  --site-port PORT   Override site port
-  --api-port PORT    Override api port
-  --hosts LIST       Comma list: root,api,www
+  -a, --app NAME         Override app name
+  -e, --env ENV          Environment (dev|staging|prod)
+  -d, --domain DOMAIN    Override domain
+  -s, --site-port PORT   Override site port
+  -i, --api-port PORT    Override api port
+  -H, --hosts LIST       Comma list: root,api,www
   --auto-ports       Auto-select next available port pair
   --auto-detect-ports  Auto-detect Docker ports (default: on)
   --no-cache         Create Cloudflare cache bypass rule for hostnames (requires Cache Rules/Rulesets Edit)
@@ -166,29 +166,29 @@ cmd_bootstrap() {
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --app)
+      -a|--app)
         app_name="$2"
         shift 2
         ;;
-      --env)
+      -e|--env)
         env_name="$2"
         shift 2
         ;;
-      --domain)
+      -d|--domain)
         domain="$2"
         shift 2
         ;;
-      --site-port)
+      -s|--site-port)
         site_port="$2"
         user_ports="true"
         shift 2
         ;;
-      --api-port)
+      -i|--api-port)
         api_port="$2"
         user_ports="true"
         shift 2
         ;;
-      --hosts)
+      -H|--hosts)
         hosts_list="$2"
         shift 2
         ;;
@@ -224,21 +224,19 @@ cmd_bootstrap() {
   fi
   if [[ -z "$env_name" && "$manual_mode" == "true" ]]; then
     env_name="prod"
-    log_info "Manual mode: --env not provided; defaulting to prod."
+    log_info "Manual mode: -e (or --env) not provided; defaulting to prod."
   fi
   if [[ -z "$env_name" ]]; then
     env_name="dev"
   fi
 
   local include_root="true"
-  local include_api="true"
-  local include_www="true"
+  local include_api="false"
+  local include_www="false"
   local hosts_override="false"
   if [[ -n "$hosts_list" ]]; then
     hosts_override="true"
     include_root="false"
-    include_api="false"
-    include_www="false"
     hosts_list="${hosts_list// /}"
     IFS=',' read -r -a host_items <<<"$hosts_list"
     if [[ "${#host_items[@]}" -eq 0 ]]; then
@@ -255,9 +253,6 @@ cmd_bootstrap() {
     if ! is_true "$include_root" && ! is_true "$include_api" && ! is_true "$include_www"; then
       die "At least one host must be set in --hosts (root,api,www)."
     fi
-  elif [[ "$manual_mode" == "true" ]]; then
-    include_api="false"
-    include_www="false"
   fi
 
   resolve_context "$app_name" "$env_name" "$domain" "$site_port" "$api_port" "$auto_ports" "" "dev" "$include_api" "$include_www"
@@ -276,7 +271,7 @@ cmd_bootstrap() {
   if [[ "$manual_mode" != "true" ]]; then
     if ! fb_compose_file >/dev/null 2>&1; then
       log_error "Auto mode expects docker-compose.yml or docker-compose.yaml in the current directory."
-      log_error "If your app is already running, use Manual mode with --site-port (and --api-port)."
+      log_error "If your app is already running, use Manual mode with -s (or --site-port) and -i (or --api-port)."
       exit 1
     fi
     local docker_ports
@@ -311,11 +306,11 @@ cmd_bootstrap() {
             write_ports_json "$(ports_json_path "$APP_NAME" "$ENV_NAME")" "$SITE_PORT" "$API_PORT"
           else
             log_warn "Multiple Docker ports found for this app: $docker_ports_list"
-            log_info "Choose ports explicitly: fb bootstrap --site-port <site> --api-port <api>"
+            log_info "Choose ports explicitly: fb bootstrap -s <site> -i <api> (or --site-port/--api-port)"
           fi
         else
           log_warn "Docker ports detected ($docker_ports_list), but auto-detect is disabled."
-          log_info "Choose ports explicitly: fb bootstrap --site-port $rec_site --api-port $rec_api"
+          log_info "Choose ports explicitly: fb bootstrap -s $rec_site -i $rec_api (or --site-port/--api-port)"
         fi
       fi
     elif is_true "$auto_detect_ports"; then
@@ -478,7 +473,7 @@ cmd_bootstrap() {
           fi
         else
           log_warn "Multiple Docker ports found after deploy: $post_list"
-          log_info "Choose ports explicitly: fb bootstrap --site-port <site> --api-port <api>"
+          log_info "Choose ports explicitly: fb bootstrap -s <site> -i <api> (or --site-port/--api-port)"
         fi
       fi
     fi

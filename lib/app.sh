@@ -17,8 +17,8 @@ app_down_help() {
 Usage: fb app down [options] [app[/env]]
 
 Options:
-  --app NAME          App name (defaults to repo or config)
-  --env ENV           Environment (default: dev)
+  -a, --app NAME          App name (defaults to repo or config)
+  -e, --env ENV           Environment (default: dev)
   --tunnel-only       Only stop the tunnel
   --purge             Remove local app state (~/.founderbooster/<app>/<env>/)
 
@@ -35,10 +35,10 @@ app_status_help() {
 Usage: fb app status [options] [app[/env]]
 
 Options:
-  --app NAME          App name (defaults to repo or config)
-  --env ENV           Environment (default: dev)
+  -a, --app NAME          App name (defaults to repo or config)
+  -e, --env ENV           Environment (default: dev)
   --all               Show status for all environments of an app
-  --hosts LIST        Comma list: root,api,www
+  -H, --hosts LIST        Comma list: root,api,www
 EOF
 }
 
@@ -112,14 +112,14 @@ cmd_app_down() {
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --app)
+      -a|--app)
         if [[ -z "${2:-}" || "${2:0:1}" == "-" ]]; then
           die "Usage: fb app down [options] [app[/env]]"
         fi
         app_name="$2"
         shift 2
         ;;
-      --env)
+      -e|--env)
         if [[ -z "${2:-}" || "${2:0:1}" == "-" ]]; then
           die "Usage: fb app down [options] [app[/env]]"
         fi
@@ -275,14 +275,14 @@ cmd_app_status() {
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --app)
+      -a|--app)
         if [[ -z "${2:-}" || "${2:0:1}" == "-" ]]; then
           die "Usage: fb app status [options] [app[/env]]"
         fi
         app_name="$2"
         shift 2
         ;;
-      --env)
+      -e|--env)
         if [[ -z "${2:-}" || "${2:0:1}" == "-" ]]; then
           die "Usage: fb app status [options] [app[/env]]"
         fi
@@ -294,7 +294,7 @@ cmd_app_status() {
         show_all="true"
         shift
         ;;
-      --hosts)
+      -H|--hosts)
         hosts_list="$2"
         shift 2
         ;;
@@ -408,10 +408,10 @@ cmd_app_status() {
           if [[ -n "$chosen_env" ]]; then
             env_name="$chosen_env"
           else
-            log_warn "Multiple environments found; use --env to select."
+            log_warn "Multiple environments found; use -e (or --env) to select."
           fi
         else
-          log_warn "Multiple environments found; use --env to select."
+          log_warn "Multiple environments found; use -e (or --env) to select."
         fi
       fi
     fi
@@ -427,7 +427,7 @@ cmd_app_status() {
   pid_path="$(cloudflare_pid_path "$app_name" "$env_name")"
   if [[ ! -f "$config_path" && ! -f "$ports_path" && ! -f "$token_path" && ! -f "$pid_path" ]]; then
     log_warn "No local state found for $app_name/$env_name."
-    log_warn "Run: fb bootstrap --env $env_name --domain <domain>"
+    log_warn "Run: fb bootstrap -e $env_name -d <domain> (or --env/--domain)"
     local docker_ports
     docker_ports="$(docker_published_ports_for_app "$app_name" "$PWD" || true)"
     if [[ -n "$docker_ports" ]]; then

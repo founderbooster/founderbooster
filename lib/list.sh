@@ -63,7 +63,7 @@ cmd_list() {
         compose_display="~/${compose_display#$HOME/}"
       fi
     fi
-    echo "$app/$env - type=app tunnel=$tunnel_status pid=$pid compose=$compose_display"
+    echo "  - $app/$env - type=app tunnel=$tunnel_status pid=$pid compose=$compose_display"
   done <<<"$configs"
 
   echo "Tip: fb app down <app>/<env> (use --purge to remove local state)"
