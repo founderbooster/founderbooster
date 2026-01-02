@@ -9,8 +9,8 @@ Options:
   -a, --app NAME         Override app name
   -e, --env ENV          Environment (dev|staging|prod)
   -d, --domain DOMAIN    Override domain
-  --site-port PORT   Override site port
-  --api-port PORT    Override api port
+  -s, --site-port PORT   Override site port
+  -i, --api-port PORT    Override api port
   -H, --hosts LIST       Comma list: root,api,www
   --auto-ports       Auto-select next available port pair
   --auto-detect-ports  Auto-detect Docker ports (default: on)
@@ -178,12 +178,12 @@ cmd_bootstrap() {
         domain="$2"
         shift 2
         ;;
-      --site-port)
+      -s|--site-port)
         site_port="$2"
         user_ports="true"
         shift 2
         ;;
-      --api-port)
+      -i|--api-port)
         api_port="$2"
         user_ports="true"
         shift 2

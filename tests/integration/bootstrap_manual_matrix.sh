@@ -31,7 +31,7 @@ cases=(
 for case in "${cases[@]}"; do
   IFS='|' read -r env domain hosts expected_domain expect_root expect_api expect_www <<<"$case"
   output_file="$TMP_DIR/output-${env}.txt"
-  cmd_bootstrap --domain "$domain" --env "$env" --hosts "$hosts" --site-port 8080 >"$output_file" 2>&1 || true
+  cmd_bootstrap -d "$domain" -e "$env" -H "$hosts" -s 8080 >"$output_file" 2>&1 || true
   output="$(cat "$output_file")"
   OUTPUT_DUMP="$output"
   echo "Output captured at: $output_file"

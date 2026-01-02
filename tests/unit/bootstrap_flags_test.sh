@@ -3,20 +3,12 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
-assert_contains() {
-  local haystack="$1"
-  local needle="$2"
-  if [[ "$haystack" != *"$needle"* ]]; then
-    echo "ASSERT_CONTAINS failed: missing '$needle'" >&2
-    exit 1
-  fi
-}
-
-assert_not_contains() {
-  local haystack="$1"
-  local needle="$2"
-  if [[ "$haystack" == *"$needle"* ]]; then
-    echo "ASSERT_NOT_CONTAINS failed: found '$needle'" >&2
+assert_eq() {
+  local expected="$1"
+  local actual="$2"
+  local msg="${3:-}"
+  if [[ "$expected" != "$actual" ]]; then
+    echo "ASSERT_EQ failed: expected='$expected' actual='$actual' $msg" >&2
     exit 1
   fi
 }
@@ -52,10 +44,26 @@ source "$ROOT_DIR/lib/bootstrap.sh"
 export FB_HOME="$TMP_DIR/fb-home"
 mkdir -p "$FB_HOME"
 
+CAP_SITE_FLAG=""
+CAP_API_FLAG=""
 fb_config_init() { CONFIG_FILE=""; }
 config_app_name() { return 0; }
 config_get() { return 0; }
-resolve_ports() { SITE_PORT="8080"; API_PORT="8080"; PORTS_SOURCE="flags"; }
+resolve_ports() {
+  CAP_SITE_FLAG="$3"
+  CAP_API_FLAG="$4"
+  if [[ -n "$CAP_SITE_FLAG" ]]; then
+    SITE_PORT="$CAP_SITE_FLAG"
+  else
+    SITE_PORT="8080"
+  fi
+  if [[ -n "$CAP_API_FLAG" ]]; then
+    API_PORT="$CAP_API_FLAG"
+  else
+    API_PORT="$SITE_PORT"
+  fi
+  PORTS_SOURCE="flags"
+}
 docker_published_ports_for_app() { return 1; }
 ensure_ports_available() { return 0; }
 ports_json_path() { echo "$FB_HOME/$1/$2/ports.json"; }
@@ -73,17 +81,11 @@ cf_create_tunnel() { echo "tunnel-123"; }
 cf_ensure_dns_record() { return 0; }
 cloudflare_get_token_or_file() { echo "token-123"; }
 
-cmd_bootstrap -d example.com -s 8080 -i 8080
+cmd_bootstrap -d example.com -i 9090
 
-config_path="$FB_HOME/app/dev/config.yml"
-if [[ ! -f "$config_path" ]]; then
-  echo "Expected config.yml at $config_path" >&2
-  exit 1
-fi
+assert_eq "" "$CAP_SITE_FLAG" "site flag should be empty when -s omitted"
+assert_eq "9090" "$CAP_API_FLAG" "api flag should capture -i"
+assert_eq "8080" "$SITE_PORT" "site should default when -s omitted"
+assert_eq "9090" "$API_PORT" "api should use -i value"
 
-config_contents="$(cat "$config_path")"
-assert_contains "$config_contents" "hostname: dev.example.com"
-assert_not_contains "$config_contents" "hostname: api-dev.example.com"
-assert_not_contains "$config_contents" "hostname: www-dev.example.com"
-
-echo "bootstrap_hosts_test.sh OK"
+echo "bootstrap_flags_test.sh OK"
