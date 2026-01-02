@@ -36,7 +36,7 @@ cloudflare_tunnel_running() {
 output="$(cmd_list)"
 OUTPUT_DUMP="$output"
 
-assert_contains "$output" "app1/dev - type=app tunnel=running pid=4242 compose=~/demo-app"
-assert_contains "$output" "app2/prod - type=app tunnel=stopped pid=- compose=-"
+assert_contains "$output" "- app1/dev - type=app tunnel=running pid=4242 compose=~/demo-app"
+assert_contains "$output" "- app2/prod - type=app tunnel=stopped pid=- compose=-"
 
 echo "app_list.sh OK"
