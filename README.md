@@ -1,9 +1,10 @@
 # FounderBooster (`fb`)
 
-Open-source CLI that exposes a local app on your own domain using Cloudflare Tunnel + DNS + SSL.
-It does not host your app, provide a PaaS, or impose a framework.
-No manual Cloudflare dashboard setup required.
-No copying cert.pem.
+Open-source CLI that exposes a locally running app to your own domain using Cloudflare Tunnel — without hosting it, changing your app, or opening inbound ports.
+
+It does not provide a PaaS or impose a framework.
+No manual Cloudflare dashboard setup.
+No certificate files to copy or manage.
 
 ---
 
@@ -12,7 +13,7 @@ No copying cert.pem.
 - An OSS CLI for exposing a local app on your own domain
 - App-agnostic (works with any stack)
 - Cloudflare-powered (tunnels + DNS + SSL)
-- Useful for launches, demos, and early users
+- Useful for launches, demos, internal previews, and early users
 
 ## What FounderBooster Does / Does Not Touch
 
@@ -25,6 +26,7 @@ Does not:
 - Modify other DNS records in your zone
 - Edit your app code or Docker files
 - Provide HA or production hosting (reliability depends on Cloudflare Tunnel + your machine uptime)
+- Require inbound firewall or router changes
 
 ---
 
@@ -33,7 +35,7 @@ Does not:
 - ❌ Not a SaaS framework
 - ❌ Not an app template
 - ❌ Not a hosting provider
-- ❌ Not coupled to any product (SitesInsight, PayOpsCopilot, etc.)
+- ❌ Not a reverse proxy you need to operate or secure
 
 Your app stays your app.
 
@@ -41,75 +43,30 @@ Your app stays your app.
 
 ## Quickstart
 
+Run fb bootstrap from your app directory. FounderBooster detects your running app and maps it to your domain.
+
 Auto mode (Docker, detects published ports):
 ```bash
 cd <your-app-repo>
 export CLOUDFLARE_API_TOKEN=...
-fb bootstrap --domain <your-domain> --env dev
+fb bootstrap -d <your-domain>
 ```
 
 Manual mode (known ports):
 ```bash
 cd <your-app-repo>
-# start your app running at http://localhost:<part>
+# start your app running at http://localhost:<port>
 export CLOUDFLARE_API_TOKEN=...
-fb bootstrap --domain <your-domain> --site-port <port>
+fb bootstrap -d <your-domain> -s <port>
 ```
-
-## Try a Demo (Optional)
-
-See [DEMO.md](docs/DEMO.md).
-
-## Tests
-
-See [TESTING.md](docs/TESTING.md).
 
 ## How it works
 
-FounderBooster creates or reuses a Cloudflare tunnel, updates DNS + SSL, and stores local state per app/env.
+FounderBooster acts as a control plane over Cloudflare and your local runtime: it creates or reuses a Cloudflare tunnel, updates DNS + SSL, and stores local state per app/env.
 
 For a high-level view of traffic flow and security boundaries, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+For usage details, see [docs/USAGE.md](docs/USAGE.md). For common questions, see [docs/FAQ.md](docs/FAQ.md).
 
-### Modes
-
-FounderBooster supports Auto mode (default, Docker-first) and Manual mode (port-first). Auto mode detects published
-Docker ports. Manual mode requires `--site-port` and optionally `--api-port` and defaults to `prod` if you omit `--env`.
-In Manual mode, `--env` mainly shapes the public hostname and isolates local state; see `docs/MODES.md`.
-
-### Environments and domains
-
-FounderBooster uses `--env` to shape domains by default:
-
-- `--env prod --domain example.com` → `https://example.com` and `https://api.example.com`
-- `--env dev --domain example.com` → `https://dev.example.com` and `https://api-dev.example.com`
-- `--env dev --domain dev.example.com` → `https://dev.example.com` and `https://api-dev.example.com`
-
-For subdomains like `demo.example.com`, the API hostname becomes `api-demo.example.com`
-(and `www-demo.example.com` if enabled). This avoids 4+ level subdomains in MVP.
-
-FounderBooster typically uses shallow hostnames like `api-dev.example.com` to reduce SSL/DNS friction; domains purchased
-via Cloudflare usually work out of the box, while domains from other registrars in most cases require pointing
-nameservers to Cloudflare first. See [docs/DNS_AND_TUNNEL_FLOW.md](docs/DNS_AND_TUNNEL_FLOW.md) for a high-level explanation.
-
-If you run multiple environments in parallel (dev/staging), keep each env in a
-separate repo/branch directory. FounderBooster auto-detects Docker published ports
-and saves them per env in `~/.founderbooster/<app>/<env>/ports.json`.
-
-### Optional App Configuration
-
-Apps may include a founderbooster.yml at repo root.
-
-```yaml
-app: myapp
-domains:
-  prod: myapp.com
-ports:
-  prod:
-    site: 8080
-    api: 8000
-```
-
-If omitted, FounderBooster uses deterministic defaults.
 
 ### Common Commands
 
@@ -117,31 +74,26 @@ If omitted, FounderBooster uses deterministic defaults.
 fb bootstrap
 fb doctor
 fb version
-fb --version
-fb self update
 fb self uninstall
+
+# optional (Early Access only)
+fb self update
 fb license status
 fb activate <license-key>
 ```
 
 ### Plugins (optional)
 
-Plugins are external executables dispatched by subcommand name and are not required for core usage. See
-[docs/PLUGINS.md](docs/PLUGINS.md).
+Plugins are external executables dispatched by subcommand name and are not required for core usage. The core CLI never depends on paid plugins to function. See [docs/PLUGINS.md](docs/PLUGINS.md).
 
 ---
 
 ## Requirements
 
-Core requirements:
-- macOS
-- cloudflared (`brew install cloudflared`)
-- jq (`brew install jq`)
-- Cloudflare account + API token
+FounderBooster runs on macOS and Linux. See the platform setup guides:
 
-Auto mode only:
-- Docker
-- Docker Compose
+- macOS: [docs/MACOS_PREREQS.md](docs/MACOS_PREREQS.md)
+- Linux: [docs/LINUX_PREREQS.md](docs/LINUX_PREREQS.md)
 
 ---
 
@@ -163,42 +115,37 @@ curl -fsSL https://downloads.founderbooster.com/install.sh | bash
 ```
 
 The installer is optional and not required to use the OSS core.
+All installation methods result in the same open-source core functionality.
 GitHub tags are source snapshots; release binaries and updates are driven by
 https://downloads.founderbooster.com/manifest.json.
 
-## License / Early Access
+## License & Early Access
 
-OSS is fully usable without a license. Core flows (Auto + Manual `fb bootstrap`) are fully OSS in v0.1.0. Early Access is
-optional and includes prebuilt binaries, the one-line installer, automatic updates, and early access to advanced
-plugin workflows.
+FounderBooster is fully open source (MIT).  
+All core workflows — including Auto and Manual `fb bootstrap` — are always usable **without a license**.
+
+**Early Access** is optional and intended for users who want convenience features and to invest early in the roadmap.
+
+It includes:
+
+- Prebuilt, signed binaries
+- One-line installer and `fb self update`
+- Early access to advanced plugins and workflows
+- Priority fixes and early feedback loop
+- **All plugins and plugin workflows released during the Early Access period**
+
+Early Access applies only to features shipped while Early Access is active.  
+Future major capabilities may be released as separate plugins or tiers.
+
+### License Activation (Early Access only)
 
 ```bash
 fb license status
 fb activate <license-key>
 ```
 
-Activation in v0.1.0 uses `fb activate <license-key>`.
-
-## Expert Mode (planned)
-
-Advanced multi-service routing and custom ingress configuration will be introduced as an optional plugin in a future
-release.
-
-## Why pay if OSS?
-
-## Early Access
-
-FounderBooster is fully open source (MIT). Core workflows are always usable without a license.
-
-**Early Access** is a one-time purchase intended for users who want convenience and to invest early in the roadmap. It includes:
-
-- Prebuilt, signed binaries
-- One-line installer and `fb self update`
-- Priority fixes and early feedback loop
-- **All plugins and plugin workflows released during the Early Access period**
-
-Early Access applies to features shipped while Early Access is active.  
-Future major capabilities may be released as separate plugins or tiers.
+Activation in v0.1 uses an offline, signed license key.
+No network calls are required for validation.
 
 Learn more: https://founderbooster.com/early-access
 

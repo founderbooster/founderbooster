@@ -5,7 +5,7 @@ Auto mode demo (Docker-based):
 git clone https://github.com/founderbooster/directus-demo.git
 cd directus-demo
 export CLOUDFLARE_API_TOKEN=...
-fb bootstrap --domain <your-domain> --env dev
+fb bootstrap -d <your-domain>
 ```
 
 Manual mode demo (known ports):
@@ -17,5 +17,5 @@ chmod +x scripts/run-local.sh
 ./scripts/run-local.sh
 
 export CLOUDFLARE_API_TOKEN=...
-fb bootstrap --domain <your-domain> --site-port 3000
+fb bootstrap -d <your-domain> -s 3000
 ```
