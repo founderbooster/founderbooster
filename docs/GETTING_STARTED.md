@@ -1,11 +1,15 @@
 # Getting Started with FounderBooster
 
 ## What you’ll need
-- A local app that runs via Docker (docker compose or docker run)
+- A local app running on your machine
+    - With Docker or Docker Compose (**optional**, enables auto-detection), or
+    - Without Docker (any app listening on a local port)
 - A domain you own
-- A Cloudflare account
-- Docker Desktop running
+- A Cloudflare account (**free tier is sufficient**)
 - macOS or Linux (Windows not supported yet)
+
+Optional (Auto mode only):
+- Docker or Docker Desktop
 
 ## What FounderBooster does
 FounderBooster exposes your existing local app, adds DNS and secure access for this app only, and leaves your app and repo unchanged. It does not host or rebuild your app, and it does not touch unrelated DNS records.
@@ -40,7 +44,7 @@ git clone https://github.com/founderbooster/directus-demo.git
 cd directus-demo
 
 export CLOUDFLARE_API_TOKEN=...
-fb bootstrap --domain yourdomain.com --env dev
+fb bootstrap -d yourdomain.com
 ```
 
 ## Manual mode quickstart (ports)
@@ -50,29 +54,18 @@ Example for a site on 3000:
 
 ```bash
 export CLOUDFLARE_API_TOKEN=...
-fb bootstrap --domain yourdomain.com --site-port 3000
+fb bootstrap -d yourdomain.com -s 3000
 ```
-
-By default, Manual mode exposes only the root domain. To add API or WWW hostnames, pass `--hosts root,api,www`.
-In Manual (port-first) mode, `--env` primarily controls the public hostname and isolates FounderBooster state. Your app process remains your responsibility.
-If you’re in Manual mode and only need one shareable URL, you can treat everything as `prod` and ignore env entirely.
-If you omit `--env` in Manual mode, FB defaults to `prod`.
 
 ## Managing your app
 Use these commands after you have bootstrapped at least once:
 
 ```bash
+fb app list
 fb app status
-```
-
-```bash
 fb app down
-```
-
-```bash
 fb app down --purge
 ```
-
 `fb app down --purge` stops the tunnel and removes local FounderBooster state for that app and environment. Cloudflare remains unchanged. To fully remove it, delete the tunnel and DNS records in Cloudflare.
 
 ## Notes
