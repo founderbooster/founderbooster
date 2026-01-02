@@ -9,12 +9,12 @@ Options:
   --ports            Show resolved ports and check usage
   --dns              Show DNS records for the resolved domain
   --install          Verify installed binary and version file
-  --app NAME         Override app name
-  --env ENV          Environment (dev|staging|prod)
-  --domain DOMAIN    Override domain
+  -a, --app NAME         Override app name
+  -e, --env ENV          Environment (dev|staging|prod)
+  -d, --domain DOMAIN    Override domain
   --site-port PORT   Override site port
   --api-port PORT    Override api port
-  --hosts LIST       Comma list: root,api,www
+  -H, --hosts LIST       Comma list: root,api,www
 EOF
 }
 
@@ -43,15 +43,15 @@ cmd_doctor() {
         check_install="true"
         shift
         ;;
-      --app)
+      -a|--app)
         app_name="$2"
         shift 2
         ;;
-      --env)
+      -e|--env)
         env_name="$2"
         shift 2
         ;;
-      --domain)
+      -d|--domain)
         domain="$2"
         shift 2
         ;;
@@ -63,7 +63,7 @@ cmd_doctor() {
         api_port="$2"
         shift 2
         ;;
-      --hosts)
+      -H|--hosts)
         hosts_list="$2"
         shift 2
         ;;

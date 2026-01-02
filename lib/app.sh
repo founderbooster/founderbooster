@@ -17,8 +17,8 @@ app_down_help() {
 Usage: fb app down [options] [app[/env]]
 
 Options:
-  --app NAME          App name (defaults to repo or config)
-  --env ENV           Environment (default: dev)
+  -a, --app NAME          App name (defaults to repo or config)
+  -e, --env ENV           Environment (default: dev)
   --tunnel-only       Only stop the tunnel
   --purge             Remove local app state (~/.founderbooster/<app>/<env>/)
 
@@ -35,10 +35,10 @@ app_status_help() {
 Usage: fb app status [options] [app[/env]]
 
 Options:
-  --app NAME          App name (defaults to repo or config)
-  --env ENV           Environment (default: dev)
+  -a, --app NAME          App name (defaults to repo or config)
+  -e, --env ENV           Environment (default: dev)
   --all               Show status for all environments of an app
-  --hosts LIST        Comma list: root,api,www
+  -H, --hosts LIST        Comma list: root,api,www
 EOF
 }
 
@@ -112,14 +112,14 @@ cmd_app_down() {
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --app)
+      -a|--app)
         if [[ -z "${2:-}" || "${2:0:1}" == "-" ]]; then
           die "Usage: fb app down [options] [app[/env]]"
         fi
         app_name="$2"
         shift 2
         ;;
-      --env)
+      -e|--env)
         if [[ -z "${2:-}" || "${2:0:1}" == "-" ]]; then
           die "Usage: fb app down [options] [app[/env]]"
         fi
@@ -275,14 +275,14 @@ cmd_app_status() {
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --app)
+      -a|--app)
         if [[ -z "${2:-}" || "${2:0:1}" == "-" ]]; then
           die "Usage: fb app status [options] [app[/env]]"
         fi
         app_name="$2"
         shift 2
         ;;
-      --env)
+      -e|--env)
         if [[ -z "${2:-}" || "${2:0:1}" == "-" ]]; then
           die "Usage: fb app status [options] [app[/env]]"
         fi
@@ -294,7 +294,7 @@ cmd_app_status() {
         show_all="true"
         shift
         ;;
-      --hosts)
+      -H|--hosts)
         hosts_list="$2"
         shift 2
         ;;
