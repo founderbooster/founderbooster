@@ -58,6 +58,7 @@ config_get() { return 0; }
 resolve_ports() { SITE_PORT="8080"; API_PORT="8080"; PORTS_SOURCE="flags"; }
 docker_published_ports_for_app() { return 1; }
 ensure_ports_available() { return 0; }
+port_in_use() { return 1; }
 ports_json_path() { echo "$FB_HOME/$1/$2/ports.json"; }
 write_ports_json() { return 0; }
 require_cmd() { return 0; }
@@ -73,7 +74,7 @@ cf_create_tunnel() { echo "tunnel-123"; }
 cf_ensure_dns_record() { return 0; }
 cloudflare_get_token_or_file() { echo "token-123"; }
 
-cmd_bootstrap -d example.com -s 8080 -i 8080
+cmd_bootstrap -d example.com -s 8080 -i 8080 -e dev
 
 config_path="$FB_HOME/app/dev/config.yml"
 if [[ ! -f "$config_path" ]]; then

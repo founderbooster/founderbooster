@@ -66,6 +66,7 @@ resolve_ports() {
 }
 docker_published_ports_for_app() { return 1; }
 ensure_ports_available() { return 0; }
+port_in_use() { return 1; }
 ports_json_path() { echo "$FB_HOME/$1/$2/ports.json"; }
 write_ports_json() { return 0; }
 require_cmd() { return 0; }
@@ -81,7 +82,7 @@ cf_create_tunnel() { echo "tunnel-123"; }
 cf_ensure_dns_record() { return 0; }
 cloudflare_get_token_or_file() { echo "token-123"; }
 
-cmd_bootstrap -d example.com -i 9090
+cmd_bootstrap -d example.com -i 9090 -e dev
 
 assert_eq "" "$CAP_SITE_FLAG" "site flag should be empty when -s omitted"
 assert_eq "9090" "$CAP_API_FLAG" "api flag should capture -i"

@@ -408,10 +408,10 @@ cmd_app_status() {
           if [[ -n "$chosen_env" ]]; then
             env_name="$chosen_env"
           else
-            log_warn "Multiple environments found; use --env to select."
+            log_warn "Multiple environments found; use -e (or --env) to select."
           fi
         else
-          log_warn "Multiple environments found; use --env to select."
+          log_warn "Multiple environments found; use -e (or --env) to select."
         fi
       fi
     fi
@@ -427,7 +427,7 @@ cmd_app_status() {
   pid_path="$(cloudflare_pid_path "$app_name" "$env_name")"
   if [[ ! -f "$config_path" && ! -f "$ports_path" && ! -f "$token_path" && ! -f "$pid_path" ]]; then
     log_warn "No local state found for $app_name/$env_name."
-    log_warn "Run: fb bootstrap --env $env_name --domain <domain>"
+    log_warn "Run: fb bootstrap -e $env_name -d <domain> (or --env/--domain)"
     local docker_ports
     docker_ports="$(docker_published_ports_for_app "$app_name" "$PWD" || true)"
     if [[ -n "$docker_ports" ]]; then

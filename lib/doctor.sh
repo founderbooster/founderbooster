@@ -181,7 +181,7 @@ cmd_doctor() {
         fi
         log_warn "Docker publishes ports for containers matching '$app_name' that do not include the resolved ports."
         log_info "Ports published by Docker: $docker_ports_list"
-        log_info "If your app listens on one of these, rerun: fb bootstrap --site-port $rec_site --api-port $rec_api"
+        log_info "If your app listens on one of these, rerun: fb bootstrap -s $rec_site -i $rec_api (or --site-port/--api-port)"
       fi
     fi
   fi

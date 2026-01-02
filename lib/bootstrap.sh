@@ -224,7 +224,7 @@ cmd_bootstrap() {
   fi
   if [[ -z "$env_name" && "$manual_mode" == "true" ]]; then
     env_name="prod"
-    log_info "Manual mode: --env not provided; defaulting to prod."
+    log_info "Manual mode: -e (or --env) not provided; defaulting to prod."
   fi
   if [[ -z "$env_name" ]]; then
     env_name="dev"
@@ -271,7 +271,7 @@ cmd_bootstrap() {
   if [[ "$manual_mode" != "true" ]]; then
     if ! fb_compose_file >/dev/null 2>&1; then
       log_error "Auto mode expects docker-compose.yml or docker-compose.yaml in the current directory."
-      log_error "If your app is already running, use Manual mode with --site-port (and --api-port)."
+      log_error "If your app is already running, use Manual mode with -s (or --site-port) and -i (or --api-port)."
       exit 1
     fi
     local docker_ports
@@ -306,11 +306,11 @@ cmd_bootstrap() {
             write_ports_json "$(ports_json_path "$APP_NAME" "$ENV_NAME")" "$SITE_PORT" "$API_PORT"
           else
             log_warn "Multiple Docker ports found for this app: $docker_ports_list"
-            log_info "Choose ports explicitly: fb bootstrap --site-port <site> --api-port <api>"
+            log_info "Choose ports explicitly: fb bootstrap -s <site> -i <api> (or --site-port/--api-port)"
           fi
         else
           log_warn "Docker ports detected ($docker_ports_list), but auto-detect is disabled."
-          log_info "Choose ports explicitly: fb bootstrap --site-port $rec_site --api-port $rec_api"
+          log_info "Choose ports explicitly: fb bootstrap -s $rec_site -i $rec_api (or --site-port/--api-port)"
         fi
       fi
     elif is_true "$auto_detect_ports"; then
@@ -473,7 +473,7 @@ cmd_bootstrap() {
           fi
         else
           log_warn "Multiple Docker ports found after deploy: $post_list"
-          log_info "Choose ports explicitly: fb bootstrap --site-port <site> --api-port <api>"
+          log_info "Choose ports explicitly: fb bootstrap -s <site> -i <api> (or --site-port/--api-port)"
         fi
       fi
     fi

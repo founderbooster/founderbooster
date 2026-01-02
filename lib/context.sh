@@ -34,7 +34,7 @@ resolve_context() {
     DOMAIN_NAME="$(config_get "domains.$ENV_NAME")"
   fi
   if [[ -z "$DOMAIN_NAME" ]]; then
-    die "Domain is required. Set --domain or founderbooster.yml domains.$ENV_NAME."
+    die "Domain is required. Set -d (or --domain) or founderbooster.yml domains.$ENV_NAME."
   fi
 
   local original_domain="$DOMAIN_NAME"
