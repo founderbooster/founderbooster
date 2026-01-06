@@ -37,6 +37,7 @@ cd "$APP_DIR"
 
 source "$ROOT_DIR/lib/common.sh"
 source "$ROOT_DIR/lib/context.sh"
+source "$ROOT_DIR/lib/ports.sh"
 source "$ROOT_DIR/lib/cloudflare.sh"
 source "$ROOT_DIR/lib/deploy.sh"
 source "$ROOT_DIR/lib/bootstrap.sh"

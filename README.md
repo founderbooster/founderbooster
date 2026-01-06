@@ -67,6 +67,16 @@ FounderBooster acts as a control plane over Cloudflare and your local runtime: i
 For a high-level view of traffic flow and security boundaries, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 For usage details, see [docs/USAGE.md](docs/USAGE.md). For common questions, see [docs/FAQ.md](docs/FAQ.md).
 
+## Lifecycle
+
+- Publish: `fb bootstrap` (creates tunnel + DNS + starts cloudflared)
+- Unpublish: `fb app down <app>/<env>` (removes DNS + stops cloudflared; runtime preserved)
+- Stop runtime too: `fb app down <app>/<env> --stop-runtime`
+- Re-publish: `fb app up <app>/<env>` (recreates DNS + restarts cloudflared)
+- Purge: `fb app down <app>/<env> --purge` (removes local state; bootstrap required again)
+
+TTL-based auto-unpublish is available as an optional Early Access plugin (`fb ttl ...`). Core workflows do not depend on it.
+
 
 ### Common Commands
 

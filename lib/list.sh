@@ -44,10 +44,10 @@ cmd_list() {
     env="$(basename "$env_dir")"
     local pid_file
     pid_file="$(cloudflare_pid_path "$app" "$env")"
-    local tunnel_status="stopped"
+    local status="unpublished"
     local pid="-"
     if cloudflare_tunnel_running "$pid_file"; then
-      tunnel_status="running"
+      status="published"
       pid="$(cat "$pid_file" 2>/dev/null || echo "-")"
     fi
     local compose_dir_file
@@ -63,8 +63,28 @@ cmd_list() {
         compose_display="~/${compose_display#$HOME/}"
       fi
     fi
-    echo "  - $app/$env - type=app tunnel=$tunnel_status pid=$pid compose=$compose_display"
+    echo "  - $app/$env - type=app status=$status pid=$pid compose=$compose_display"
   done <<<"$configs"
 
-  echo "Tip: fb app down <app>/<env> (use --purge to remove local state)"
+  local any_running="false"
+  while IFS= read -r config; do
+    [[ -z "$config" ]] && continue
+    local env_dir
+    env_dir="$(dirname "$config")"
+    local app
+    app="$(basename "$(dirname "$env_dir")")"
+    local env
+    env="$(basename "$env_dir")"
+    local pid_file
+    pid_file="$(cloudflare_pid_path "$app" "$env")"
+    if cloudflare_tunnel_running "$pid_file"; then
+      any_running="true"
+      break
+    fi
+  done <<<"$configs"
+  if [[ "$any_running" == "true" ]]; then
+    echo "Tip: fb app down <app>/<env> to unpublish; fb app down <app>/<env> --purge to delete forever"
+  else
+    echo "Tip: fb app up <app>/<env> to re-publish; fb app down <app>/<env> --purge to delete forever"
+  fi
 }

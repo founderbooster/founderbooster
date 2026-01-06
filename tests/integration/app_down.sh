@@ -33,6 +33,9 @@ YAML
 
 cloudflare_stop_tunnel() { return 0; }
 stop_app_stack() { log_info "Stopped docker compose"; return 0; }
+cf_ensure_zone() { CF_ZONE_ID="zone-123"; CF_ACCOUNT_ID="acct-123"; }
+cf_delete_dns_record() { log_info "Deleted DNS record: $2"; }
+cf_delete_tunnel() { log_info "Deleted tunnel: $2"; }
 
 output="$(cmd_app_down appdown/dev --purge)"
 OUTPUT_DUMP="$output"

@@ -48,7 +48,35 @@ for test_file in "$ROOT_DIR/tests/e2e/"*.sh; do
   fi
   TOTAL=$((TOTAL + 1))
   log "🔹 ${COLOR_BOLD}${test_name}${COLOR_RESET}"
-  if output="$(bash "$test_file" 2>&1)"; then
+  tmp_out="$(mktemp)"
+  (
+    while true; do
+      sleep 10
+      if [[ -f "$tmp_out.pid" ]]; then
+        pid="$(cat "$tmp_out.pid" 2>/dev/null || true)"
+        if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
+          log "  INFO: still running ${test_name}..."
+        else
+          break
+        fi
+      else
+        break
+      fi
+    done
+  ) &
+  heartbeat_pid=$!
+  bash "$test_file" >"$tmp_out" 2>&1 &
+  test_pid=$!
+  printf '%s\n' "$test_pid" >"$tmp_out.pid"
+  wait "$test_pid"
+  status=$?
+  rm -f "$tmp_out.pid"
+  if kill -0 "$heartbeat_pid" 2>/dev/null; then
+    kill "$heartbeat_pid" 2>/dev/null || true
+  fi
+  output="$(cat "$tmp_out")"
+  rm -f "$tmp_out"
+  if [[ "$status" -eq 0 ]]; then
     if has_shell_error "$output"; then
       FAILED=1
       if [[ -n "$output" ]]; then

@@ -28,6 +28,8 @@ stack_flag="$TMP_DIR/stack-called"
 
 cloudflare_stop_tunnel() { printf 'called' >"$stop_flag"; }
 stop_app_stack() { printf 'called' >"$stack_flag"; return 0; }
+cf_ensure_zone() { CF_ZONE_ID="zone-123"; CF_ACCOUNT_ID="acct-123"; }
+cf_delete_dns_record() { return 0; }
 
 output_file="$TMP_DIR/output.txt"
 cmd_app_down appdown/dev --tunnel-only >"$output_file" 2>&1 || true

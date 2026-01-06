@@ -16,6 +16,10 @@ Options:
   --auto-detect-ports  Auto-detect Docker ports (default: on)
   --no-cache         Create Cloudflare cache bypass rule for hostnames (requires Cache Rules/Rulesets Edit)
   --shared-tunnel    Reuse <app>-<env> tunnel name across machines (HA)
+  --machine          Emit machine-readable FB_ lines (default: on)
+  --print-env        Emit machine-readable FB_ lines (default: on)
+  --no-machine       Disable machine-readable FB_ lines
+  --no-print-env     Disable machine-readable FB_ lines
 EOF
 }
 
@@ -145,6 +149,184 @@ machine_suffix() {
   hash_short "$raw"
 }
 
+fb_abs_path() {
+  local path="$1"
+  if [[ "$path" == /* ]]; then
+    printf '%s' "$path"
+    return 0
+  fi
+  if command -v realpath >/dev/null 2>&1; then
+    realpath "$path"
+    return 0
+  fi
+  if command -v python3 >/dev/null 2>&1; then
+    python3 - <<'PY' "$path"
+import os
+import sys
+print(os.path.abspath(sys.argv[1]))
+PY
+    return 0
+  fi
+  printf '%s' "$PWD/$path"
+}
+
+sanitize_fb_value() {
+  local val="${1:-}"
+  val="${val//$'\n'/}"
+  val="${val//$'\r'/}"
+  printf '%s' "$val"
+}
+
+json_escape() {
+  local val="${1:-}"
+  val="${val//\\/\\\\}"
+  val="${val//\"/\\\"}"
+  val="${val//$'\n'/}"
+  val="${val//$'\r'/}"
+  val="${val//$'\t'/}"
+  printf '%s' "$val"
+}
+
+build_bootstrap_fqdns_list() {
+  local list=""
+  if is_true "$HOSTNAME_ROOT"; then
+    list+="$DOMAIN_NAME"$'\n'
+  fi
+  if is_true "$HOSTNAME_API"; then
+    list+="$API_HOSTNAME_OVERRIDE"$'\n'
+  fi
+  if is_true "$HOSTNAME_WWW"; then
+    list+="$WWW_HOSTNAME_OVERRIDE"$'\n'
+  fi
+  if [[ -z "$list" ]]; then
+    return 0
+  fi
+  printf '%s' "$list" | awk 'NF' | sort -u
+}
+
+print_fb_env_lines() {
+  local app="${1:-}"
+  local env="${2:-}"
+  local zone_apex="${3:-}"
+  local tunnel_name="${4:-}"
+  local tunnel_id="${5:-}"
+  local fqdns="${6:-}"
+  local state_dir="${7:-}"
+
+  printf 'FB_APP=%s\n' "$(sanitize_fb_value "$app")"
+  printf 'FB_ENV=%s\n' "$(sanitize_fb_value "$env")"
+  printf 'FB_ZONE_APEX=%s\n' "$(sanitize_fb_value "$zone_apex")"
+  printf 'FB_TUNNEL_NAME=%s\n' "$(sanitize_fb_value "$tunnel_name")"
+  printf 'FB_TUNNEL_ID=%s\n' "$(sanitize_fb_value "$tunnel_id")"
+  printf 'FB_FQDNS=%s\n' "$(sanitize_fb_value "$fqdns")"
+  printf 'FB_STATE_DIR=%s\n' "$(sanitize_fb_value "$state_dir")"
+}
+
+build_bootstrap_fqdns() {
+  local list=""
+  local item
+  while IFS= read -r item; do
+    list+="${list:+,}$item"
+  done < <(build_bootstrap_fqdns_list || true)
+  printf '%s' "$list"
+}
+
+read_compose_dir_value() {
+  local file="$1"
+  if [[ -f "$file" ]]; then
+    local val
+    val="$(cat "$file" | tr -d '\r' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')"
+    printf '%s' "$val"
+    return 0
+  fi
+  return 1
+}
+
+write_state_json() {
+  local state_dir="$1"
+  local app="$2"
+  local env="$3"
+  local zone_apex="$4"
+  local tunnel_name="$5"
+  local tunnel_id="$6"
+  local shared_tunnel="$7"
+  local fqdns_list="$8"
+  local compose_dir="$9"
+  local ports_json="${10:-}"
+  local auto_mode="${11:-}"
+  local runtime_type="${12:-}"
+
+  ensure_dir "$state_dir"
+  local tmp_file="$state_dir/state.json.tmp"
+  local out_file="$state_dir/state.json"
+  local updated_at
+  updated_at="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+
+  local fqdns_json=""
+  local item
+  while IFS= read -r item; do
+    fqdns_json+="${fqdns_json:+,}\"$(json_escape "$item")\""
+  done <<<"$fqdns_list"
+
+  local config_yml
+  config_yml="$(fb_abs_path "$(cloudflare_config_path "$app" "$env")")"
+  local ports_json_path
+  ports_json_path="$(fb_abs_path "$(ports_json_path "$app" "$env")")"
+  local compose_dir_file
+  compose_dir_file="$(fb_abs_path "$(cloudflare_compose_dir_path "$app" "$env")")"
+  local tunnel_name_file
+  tunnel_name_file="$(fb_abs_path "$(cloudflare_tunnel_name_path "$app" "$env")")"
+  local tunnel_token_file
+  tunnel_token_file="$(fb_abs_path "$(cloudflare_token_path "$app" "$env")")"
+  local cloudflared_pid_file
+  cloudflared_pid_file="$(fb_abs_path "$(cloudflare_pid_path "$app" "$env")")"
+  local cloudflared_log_file
+  cloudflared_log_file="$(fb_abs_path "$(cloudflare_log_path "$app" "$env")")"
+
+  local runtime_json=""
+  local cloudflared_running="false"
+  if cloudflare_tunnel_running "$cloudflared_pid_file"; then
+    cloudflared_running="true"
+  fi
+  runtime_json="\"cloudflared_running\":${cloudflared_running}"
+
+  printf '{' >"$tmp_file"
+  printf '"version":1,' >>"$tmp_file"
+  printf '"app":"%s",' "$(json_escape "$app")" >>"$tmp_file"
+  printf '"env":"%s",' "$(json_escape "$env")" >>"$tmp_file"
+  printf '"zone_apex":"%s",' "$(json_escape "$zone_apex")" >>"$tmp_file"
+  printf '"fqdns":[%s],' "$fqdns_json" >>"$tmp_file"
+  printf '"tunnel_name":"%s",' "$(json_escape "$tunnel_name")" >>"$tmp_file"
+  printf '"tunnel_id":"%s",' "$(json_escape "$tunnel_id")" >>"$tmp_file"
+  printf '"shared_tunnel":%s,' "$shared_tunnel" >>"$tmp_file"
+  if [[ -n "$auto_mode" ]]; then
+    printf '"auto_mode":%s,' "$auto_mode" >>"$tmp_file"
+  fi
+  if [[ -n "$runtime_type" ]]; then
+    printf '"runtime_type":"%s",' "$(json_escape "$runtime_type")" >>"$tmp_file"
+  fi
+  printf '"compose_dir":"%s",' "$(json_escape "$compose_dir")" >>"$tmp_file"
+  if [[ -n "$ports_json" ]]; then
+    printf '"ports":{%s},' "$ports_json" >>"$tmp_file"
+  fi
+  printf '"paths":{' >>"$tmp_file"
+  printf '"config_yml":"%s",' "$(json_escape "$config_yml")" >>"$tmp_file"
+  printf '"ports_json":"%s",' "$(json_escape "$ports_json_path")" >>"$tmp_file"
+  printf '"compose_dir_file":"%s",' "$(json_escape "$compose_dir_file")" >>"$tmp_file"
+  printf '"tunnel_name_file":"%s",' "$(json_escape "$tunnel_name_file")" >>"$tmp_file"
+  printf '"tunnel_token_file":"%s",' "$(json_escape "$tunnel_token_file")" >>"$tmp_file"
+  printf '"cloudflared_pid_file":"%s",' "$(json_escape "$cloudflared_pid_file")" >>"$tmp_file"
+  printf '"cloudflared_log_file":"%s"' "$(json_escape "$cloudflared_log_file")" >>"$tmp_file"
+  printf '},' >>"$tmp_file"
+  if [[ -n "$runtime_json" ]]; then
+    printf '"runtime":{%s},' "$runtime_json" >>"$tmp_file"
+  fi
+  printf '"updated_at":"%s"' "$(json_escape "$updated_at")" >>"$tmp_file"
+  printf '}\n' >>"$tmp_file"
+
+  chmod 0644 "$tmp_file"
+  mv -f "$tmp_file" "$out_file"
+}
 
 cmd_bootstrap() {
   FB_BOOTSTRAP="true"
@@ -163,6 +345,7 @@ cmd_bootstrap() {
   local hosts_list=""
   local no_cache="false"
   local shared_tunnel="false"
+  local print_env="true"
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -206,6 +389,14 @@ cmd_bootstrap() {
         ;;
       --shared-tunnel)
         shared_tunnel="true"
+        shift
+        ;;
+      --machine|--print-env)
+        print_env="true"
+        shift
+        ;;
+      --no-machine|--no-print-env)
+        print_env="false"
         shift
         ;;
       -h|--help)
@@ -482,7 +673,12 @@ cmd_bootstrap() {
   if [[ "$app_deployed" == "true" ]]; then
     if [[ -n "$DOMAIN_NAME" ]]; then
       local cf_url="https://$DOMAIN_NAME"
-      wait_for_http_ready "$cf_url" "Cloudflare" "true" || true
+      if [[ "${FB_SKIP_READY:-}" == "1" ]]; then
+        log_info "Skipping Cloudflare readiness check (FB_SKIP_READY=1)."
+      else
+        log_info "Waiting for Cloudflare URL readiness (up to 60s): $cf_url"
+        wait_for_http_ready "$cf_url" "Cloudflare" "true" || true
+      fi
       local cf_ready_url
       cf_ready_url="$(resolve_ready_url "$cf_url")"
     fi
@@ -520,4 +716,47 @@ cmd_bootstrap() {
   log_info "  Stop:   fb app down ${APP_NAME}/${ENV_NAME}"
   log_info "  Status: fb app status ${APP_NAME}/${ENV_NAME}"
   log_info "  Logs:   $(cloudflare_log_path "$APP_NAME" "$ENV_NAME")"
+  log_info "App published. Next: fb app down ${APP_NAME}/${ENV_NAME} to unpublish; fb app list"
+
+  local zone_apex="${CF_ZONE_NAME:-${DOMAIN_ROOT:-${DOMAIN_NAME:-}}}"
+  local fqdns_list
+  fqdns_list="$(build_bootstrap_fqdns_list || true)"
+  if [[ -z "$fqdns_list" ]]; then
+    log_warn "No FQDNs resolved for state.json; writing fqdns=[]."
+  fi
+  local compose_dir=""
+  local compose_dir_file
+  compose_dir_file="$(cloudflare_compose_dir_path "$APP_NAME" "$ENV_NAME")"
+  if compose_dir="$(read_compose_dir_value "$compose_dir_file")"; then
+    :
+  else
+    compose_dir="$PWD"
+  fi
+  compose_dir="$(fb_abs_path "$compose_dir")"
+  local ports_json=""
+  local ports_file
+  ports_file="$(ports_json_path "$APP_NAME" "$ENV_NAME")"
+  if ports_vals="$(read_ports_json "$ports_file")"; then
+    local ports_site ports_api
+    ports_site="${ports_vals%% *}"
+    ports_api="${ports_vals##* }"
+    ports_json="\"site\":${ports_site},\"api\":${ports_api}"
+  elif [[ -f "$ports_file" ]]; then
+    log_warn "Failed to parse ports.json for state.json; omitting ports."
+  fi
+  local auto_mode="true"
+  local runtime_type="docker-compose"
+  if [[ "$manual_mode" == "true" ]]; then
+    auto_mode="false"
+    runtime_type="manual"
+  fi
+  local state_dir
+  state_dir="$(fb_abs_path "$FB_HOME/$APP_NAME/$ENV_NAME")"
+  write_state_json "$state_dir" "$APP_NAME" "$ENV_NAME" "$zone_apex" "$tunnel_name" "$tunnel_id" "$shared_tunnel" "$fqdns_list" "$compose_dir" "$ports_json" "$auto_mode" "$runtime_type"
+
+  if [[ "$print_env" == "true" ]]; then
+    local fqdns
+    fqdns="$(build_bootstrap_fqdns)"
+    print_fb_env_lines "$APP_NAME" "$ENV_NAME" "$zone_apex" "$tunnel_name" "$tunnel_id" "$fqdns" "$state_dir"
+  fi
 }

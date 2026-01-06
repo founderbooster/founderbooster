@@ -129,17 +129,17 @@ build_ingress_rules() {
 
   if is_true "$include_root"; then
     rules+="  - hostname: $domain"$'\n'
-    rules+="    service: http://localhost:$site_port"$'\n'
+    rules+="    service: http://127.0.0.1:$site_port"$'\n'
   fi
 
   if is_true "$include_api"; then
     rules+="  - hostname: $api_hostname"$'\n'
-    rules+="    service: http://localhost:$api_port"$'\n'
+    rules+="    service: http://127.0.0.1:$api_port"$'\n'
   fi
 
   if is_true "$include_www"; then
     rules+="  - hostname: $www_hostname"$'\n'
-    rules+="    service: http://localhost:$site_port"$'\n'
+    rules+="    service: http://127.0.0.1:$site_port"$'\n'
   fi
 
   printf '%s' "$rules"
