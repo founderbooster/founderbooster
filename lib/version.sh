@@ -27,11 +27,24 @@ EOF
 }
 
 cmd_self_update() {
-  local base_url=""
-  if [[ -f "$FB_HOME/download_base_url" ]]; then
-    base_url="$(cat "$FB_HOME/download_base_url")"
-  fi
-  base_url="${FB_DOWNLOAD_BASE_URL:-${DOWNLOAD_BASE_URL:-${base_url:-https://downloads.founderbooster.com}}}"
+  local base_url
+  local with_plugins="false"
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --with-plugins)
+        with_plugins="true"
+        shift
+        ;;
+      -h|--help)
+        echo "Usage: fb self update [--with-plugins]"
+        return 0
+        ;;
+      *)
+        die "Unknown option: $1"
+        ;;
+    esac
+  done
+  base_url="$(downloads_base_url)"
   require_license
   local manifest
   manifest="$(mktemp)"
@@ -61,6 +74,10 @@ cmd_self_update() {
   fi
   bash "$installer"
   rm -f "$installer"
+
+  if is_true "$with_plugins"; then
+    cmd_plugin update --all || true
+  fi
 }
 
 cmd_self_uninstall() {

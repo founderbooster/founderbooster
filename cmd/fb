@@ -32,6 +32,8 @@ source "$FB_ROOT/lib/list.sh"
 source "$FB_ROOT/lib/app.sh"
 # shellcheck source=lib/plugins.sh
 source "$FB_ROOT/lib/plugins.sh"
+# shellcheck source=lib/plugin_manager.sh
+source "$FB_ROOT/lib/plugin_manager.sh"
 
 show_help() {
   cat <<'EOF'
@@ -115,6 +117,10 @@ case "$cmd" in
         die "Usage: fb license status"
         ;;
     esac
+    ;;
+  plugin)
+    shift
+    cmd_plugin "$@"
     ;;
   help|-h|--help|"")
     show_help
