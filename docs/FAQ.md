@@ -61,7 +61,7 @@ Lifecycle commands map to these states:
 - Publish: `fb bootstrap`
 - Unpublish (paused): `fb app down <app>/<env>` (removes DNS + stops tunnel, keeps local state)
 - Re-publish: `fb app up <app>/<env>`
-- Purge: `fb app down <app>/<env> --purge` (deletes local state; bootstrap required again)
+- Purge: `fb app down <app>/<env> --purge` (deletes local state and stops runtime; bootstrap required again)
 
 TTL-based auto-unpublish is optional Early Access (`fb ttl ...`) and not required for core usage.
 
@@ -76,6 +76,7 @@ Flags:
 - Unpublish + stop runtime: `fb app down <app>/<env> --stop-runtime`
 - Explicit unpublish-only aliases: `--unpublish-only` or `--tunnel-only`
 - Re-publish: `fb app up <app>/<env>`
+- Re-publish + start runtime (optional): `fb app up <app>/<env> --start-runtime`
 
 If you need the old default behavior (down stops runtime), set:
 `FOUNDERBOOSTER_APP_DOWN_LEGACY_DEFAULT=1`
