@@ -54,6 +54,10 @@ e2e_wait_for_cloudflare_url() {
   local label="${2:-Cloudflare URL}"
   local tries="${3:-30}"
   local delay="${4:-2}"
+  if [[ "${FB_SKIP_READY:-}" == "1" ]]; then
+    tries=18
+    delay=5
+  fi
   local i code
   for ((i=1; i<=tries; i++)); do
     code="$(curl -s -o /dev/null -w "%{http_code}" "$url" || true)"
@@ -67,7 +71,14 @@ e2e_wait_for_cloudflare_url() {
       *)
         ;;
     esac
-    sleep "$delay"
+    if [[ "${FB_SKIP_READY:-}" == "1" ]]; then
+      sleep "$delay"
+      if [[ "$delay" -lt 20 ]]; then
+        delay=$((delay + 3))
+      fi
+    else
+      sleep "$delay"
+    fi
   done
   e2e_die "$label not ready after $((tries * delay))s: $url"
 }
@@ -98,6 +109,7 @@ e2e_setup_home() {
   trap e2e_cleanup EXIT
   export FB_HOME="$TMP_DIR/fb-home"
   export FOUNDERBOOSTER_HOME="$FB_HOME"
+  export FB_SKIP_READY="${FB_SKIP_READY:-1}"
 }
 
 e2e_cleanup() {

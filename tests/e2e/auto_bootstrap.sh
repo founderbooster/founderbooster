@@ -64,7 +64,7 @@ fi
 
 if e2e_should_teardown; then
   echo "INFO: fb app down --purge"
-  e2e_fb app down "$(basename "$APP_DIR")/$env_name" --purge
+  e2e_fb app down "$(basename "$APP_DIR")/$env_name" --purge --stop-runtime
 else
   echo "INFO: skipping teardown (E2E_SKIP_TEARDOWN=1)"
 fi

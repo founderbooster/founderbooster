@@ -58,14 +58,17 @@ stop_local_server() {
     kill "$server_pid" >/dev/null 2>&1 || true
     wait "$server_pid" 2>/dev/null || true
   fi
-  if [[ -n "${E2E_MANUAL_PORT:-}" ]] && command -v lsof >/dev/null 2>&1; then
+  local cleanup_port="${E2E_MANUAL_PORT:-$port}"
+  if [[ -n "$cleanup_port" ]] && command -v lsof >/dev/null 2>&1; then
     local lingering_pids=""
-    lingering_pids="$(lsof -ti tcp:"$E2E_MANUAL_PORT" 2>/dev/null || true)"
+    lingering_pids="$(lsof -ti tcp:"$cleanup_port" 2>/dev/null || true)"
     if [[ -n "$lingering_pids" ]]; then
+      echo "INFO: stopping lingering listeners on port $cleanup_port (pids: $lingering_pids)"
       kill -TERM $lingering_pids >/dev/null 2>&1 || true
       sleep 1
-      lingering_pids="$(lsof -ti tcp:"$E2E_MANUAL_PORT" 2>/dev/null || true)"
+      lingering_pids="$(lsof -ti tcp:"$cleanup_port" 2>/dev/null || true)"
       if [[ -n "$lingering_pids" ]]; then
+        echo "WARN: force-killing listeners on port $cleanup_port (pids: $lingering_pids)"
         kill -KILL $lingering_pids >/dev/null 2>&1 || true
       fi
     fi

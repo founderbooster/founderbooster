@@ -29,8 +29,11 @@ exit 0
 SH
 chmod +x "$STUB_BIN/docker"
 
+cf_ensure_zone() { CF_ZONE_ID="zone-123"; CF_ACCOUNT_ID="acct-123"; }
+cf_delete_dns_record() { return 0; }
+
 cd "$other_dir"
-output="$(cmd_app_down --app "$app" --env "$env" 2>&1)"
+output="$(cmd_app_down --app "$app" --env "$env" --stop-runtime 2>&1)"
 OUTPUT_DUMP="$output"
 
 assert_true "[[ -f \"$capture_file\" ]]" "docker compose down should run"

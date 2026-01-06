@@ -271,6 +271,37 @@ cf_ensure_dns_record() {
   log_info "DNS record created: $name"
 }
 
+cf_delete_dns_record() {
+  local zone_id="$1"
+  local name="$2"
+  local resp record_id
+  resp="$(cf_api_request GET "/zones/$zone_id/dns_records?type=CNAME&name=$name")"
+  if [[ "$(echo "$resp" | jq -r '.success')" != "true" ]]; then
+    die "DNS record lookup failed for $name."
+  fi
+  record_id="$(echo "$resp" | jq -r '.result[0].id // empty')"
+  if [[ -z "$record_id" ]]; then
+    log_info "DNS record not found: $name"
+    return 0
+  fi
+  resp="$(cf_api_request DELETE "/zones/$zone_id/dns_records/$record_id")"
+  if [[ "$(echo "$resp" | jq -r '.success')" != "true" ]]; then
+    die "DNS record delete failed for $name."
+  fi
+  log_info "DNS record deleted: $name"
+}
+
+cf_delete_tunnel() {
+  local account_id="$1"
+  local tunnel_id="$2"
+  local resp
+  resp="$(cf_api_request DELETE "/accounts/$account_id/cfd_tunnel/$tunnel_id")"
+  if [[ "$(echo "$resp" | jq -r '.success')" != "true" ]]; then
+    die "Cloudflare tunnel delete failed for $tunnel_id."
+  fi
+  log_info "Deleted Cloudflare tunnel: $tunnel_id"
+}
+
 cf_get_dns_record() {
   local zone_id="$1"
   local name="$2"
