@@ -31,3 +31,32 @@ The example plugin prints its arguments and a couple of context variables passed
 - `FOUNDERBOOSTER_VERSION`
 - `FOUNDERBOOSTER_STATE_ROOT`
 - `FOUNDERBOOSTER_CWD`
+
+## Plugin install/update (Early Access)
+
+FounderBooster supports an optional plugin installer for Early Access users. It downloads plugin manifests from
+`downloads.founderbooster.com` (or your configured downloads base URL) and installs plugins into:
+`~/.founderbooster/plugins/`.
+
+Install a plugin:
+```bash
+fb activate <license-key>
+fb plugin install ttl
+```
+
+Update plugins:
+```bash
+fb plugin update ttl
+fb plugin update --all
+```
+
+You can also update plugins while updating core:
+```bash
+fb self update --with-plugins
+```
+
+List/remove plugins:
+```bash
+fb plugin list
+fb plugin remove ttl
+```

@@ -47,6 +47,11 @@ is_true() {
   esac
 }
 
+is_semver() {
+  local val="$1"
+  [[ "$val" =~ ^[0-9]+(\.[0-9]+)*$ ]]
+}
+
 safe_basename() {
   local path="$1"
   basename "$path"
@@ -85,4 +90,37 @@ FounderBooster is open source.
 Optional lifetime Early Access licenses are available for users who want prebuilt binaries, automatic updates, and early access to advanced features.
 $EARLY_ACCESS_URL
 EOF
+}
+
+downloads_base_url() {
+  local base=""
+  if [[ -f "$FB_HOME/download_base_url" ]]; then
+    base="$(cat "$FB_HOME/download_base_url")"
+  fi
+  echo "${FB_DOWNLOAD_BASE_URL:-${DOWNLOAD_BASE_URL:-${base:-https://downloads.founderbooster.com}}}"
+}
+
+version_ge() {
+  local a="$1"
+  local b="$2"
+  local IFS=.
+  local -a va vb
+  read -r -a va <<<"$a"
+  read -r -a vb <<<"$b"
+  local i max
+  max="${#va[@]}"
+  if (( ${#vb[@]} > max )); then
+    max="${#vb[@]}"
+  fi
+  for ((i=0; i<max; i++)); do
+    local ai="${va[i]:-0}"
+    local bi="${vb[i]:-0}"
+    if (( ai > bi )); then
+      return 0
+    fi
+    if (( ai < bi )); then
+      return 1
+    fi
+  done
+  return 0
 }

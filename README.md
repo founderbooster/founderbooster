@@ -88,6 +88,7 @@ fb self uninstall
 
 # optional (Early Access only)
 fb self update
+fb self update --with-plugins
 fb license status
 fb activate <license-key>
 ```

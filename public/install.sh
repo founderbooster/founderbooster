@@ -154,6 +154,7 @@ runtime_dir="$HOME/.founderbooster/runtime"
 mkdir -p "$runtime_dir/lib" "$runtime_dir/templates"
 cp -R "$pkg_dir/lib/." "$runtime_dir/lib/"
 cp -R "$pkg_dir/templates/." "$runtime_dir/templates/"
+chmod +x "$runtime_dir/lib/license.sh" 2>/dev/null || true
 
 mkdir -p "$HOME/.founderbooster"
 cp "$pkg_dir/VERSION" "$HOME/.founderbooster/VERSION"

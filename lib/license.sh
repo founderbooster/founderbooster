@@ -1,7 +1,37 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+init_license_context() {
+  if [[ -z "${FB_HOME:-}" ]]; then
+    FB_HOME="${FOUNDERBOOSTER_HOME:-$HOME/.founderbooster}"
+  fi
+  if [[ -z "${FB_ROOT:-}" ]]; then
+    if [[ -n "${FOUNDERBOOSTER_HOME:-}" && -d "${FOUNDERBOOSTER_HOME}/runtime/lib" ]]; then
+      FB_ROOT="${FOUNDERBOOSTER_HOME}/runtime"
+    elif [[ -n "${FB_HOME:-}" && -d "${FB_HOME}/runtime/lib" ]]; then
+      FB_ROOT="${FB_HOME}/runtime"
+    else
+      FB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+    fi
+  fi
+  if ! command -v log_error >/dev/null 2>&1; then
+    if [[ -f "$FB_ROOT/lib/common.sh" ]]; then
+      # shellcheck source=lib/common.sh
+      source "$FB_ROOT/lib/common.sh"
+    else
+      log_error() { echo "ERROR: $*" >&2; }
+      die() { log_error "$@"; exit 1; }
+      ensure_dir() { mkdir -p "$1"; }
+    fi
+  fi
+}
+
 license_path() {
+  init_license_context
+  if [[ -n "${FOUNDERBOOSTER_LICENSE_PATH:-}" ]]; then
+    echo "$FOUNDERBOOSTER_LICENSE_PATH"
+    return 0
+  fi
   echo "$FB_HOME/license.key"
 }
 

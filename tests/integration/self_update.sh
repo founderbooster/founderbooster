@@ -55,9 +55,13 @@ chmod +x "$TEST_INSTALLER_PATH"
 
 stub_curl_self_update
 
-output="$(cmd_self_update)"
+plugin_update_flag="$TMP_DIR/plugins-updated"
+plugin_update_all() { printf 'updated' >"$plugin_update_flag"; }
+
+output="$(cmd_self_update --with-plugins)"
 OUTPUT_DUMP="$output"
 
 assert_true "[[ \"$(cat "$FB_HOME/VERSION")\" == \"0.0.2\" ]]" "version updated"
+assert_true "[[ -f \"$plugin_update_flag\" ]]" "plugins updated"
 
 echo "self_update.sh OK"

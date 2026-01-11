@@ -215,4 +215,6 @@ source_libs() {
   source "$ROOT_DIR/lib/list.sh"
   # shellcheck source=lib/app.sh
   source "$ROOT_DIR/lib/app.sh"
+  # shellcheck source=lib/plugin_manager.sh
+  source "$ROOT_DIR/lib/plugin_manager.sh"
 }
