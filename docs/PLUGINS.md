@@ -38,6 +38,8 @@ FounderBooster supports an optional plugin installer for Early Access users. It 
 `downloads.founderbooster.com` (or your configured downloads base URL) and installs plugins into:
 `~/.founderbooster/plugins/`.
 
+Optional Early Access plugin: TTL (scheduled unpublish) — https://founderbooster.com/docs/ttl
+
 Install a plugin:
 ```bash
 fb activate <license-key>

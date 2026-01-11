@@ -96,6 +96,7 @@ fb activate <license-key>
 ### Plugins (optional)
 
 Plugins are external executables dispatched by subcommand name and are not required for core usage. The core CLI never depends on paid plugins to function. See [docs/PLUGINS.md](docs/PLUGINS.md).
+Optional Early Access plugin: TTL (scheduled unpublish) — https://founderbooster.com/docs/ttl
 
 ---
 
